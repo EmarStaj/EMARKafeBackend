@@ -14,26 +14,28 @@ export class OptionService {
   async getProductOptions(productId: string) {
     try {
       // Validate that product exists
-      const product = await this.menuRepository.getItemById(productId);
-      if (!product) {
-        throw new AppError('Product not found.', 404);
-      }
+      await this.menuRepository.getItemById(productId);
       return await this.optionRepository.getProductOptions(productId);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to retrieve product options.', 400);
+      const isNotFound = error.code === 'PGRST116' || error.statusCode === 404;
+      throw new AppError(
+        isNotFound ? 'Product not found. Please verify the product UUID.' : error.message,
+        isNotFound ? 404 : 400
+      );
     }
   }
 
   async createOption(option: ProductOption) {
     try {
       // Validate that product exists
-      const product = await this.menuRepository.getItemById(option.product_id);
-      if (!product) {
-        throw new AppError('Product not found.', 404);
-      }
+      await this.menuRepository.getItemById(option.product_id);
       return await this.optionRepository.createOption(option);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to create product option.', 400);
+      const isNotFound = error.code === 'PGRST116' || error.statusCode === 404;
+      throw new AppError(
+        isNotFound ? 'Product not found. Please verify the product UUID.' : error.message,
+        isNotFound ? 404 : 400
+      );
     }
   }
 
