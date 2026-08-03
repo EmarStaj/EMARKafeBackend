@@ -1,36 +1,72 @@
 import { supabase, supabaseAdmin } from '../../config/supabase';
 
-export interface MenuItem {
+export interface Product {
   id?: string;
+  category_id: string;
   name: string;
   description?: string;
-  price: number;
-  category: string;
+  base_price: number;
   image_url?: string;
-  is_available?: boolean;
+  is_active?: boolean;
+  is_loyalty_eligible?: boolean;
 }
 
 export class MenuRepository {
   /**
-   * Fetch all menu items. Accessible to all users.
+   * Fetch all active products (menu items), joined with category information.
    */
-  async getAllItems() {
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
-      .order('category', { ascending: true });
+  async getAllItems(onlyActive = true) {
+    let query = supabase
+      .from('products')
+      .select(`
+        id,
+        category_id,
+        name,
+        description,
+        base_price,
+        image_url,
+        is_active,
+        is_loyalty_eligible,
+        avg_rating,
+        rating_count,
+        categories (
+          id,
+          name,
+          sort_order
+        )
+      `);
 
+    if (onlyActive) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   }
 
   /**
-   * Fetch a single menu item by ID.
+   * Fetch a single product by ID.
    */
   async getItemById(id: string) {
     const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
+      .from('products')
+      .select(`
+        id,
+        category_id,
+        name,
+        description,
+        base_price,
+        image_url,
+        is_active,
+        is_loyalty_eligible,
+        avg_rating,
+        rating_count,
+        categories (
+          id,
+          name
+        )
+      `)
       .eq('id', id)
       .single();
 
@@ -39,12 +75,12 @@ export class MenuRepository {
   }
 
   /**
-   * Create a new menu item. Bypasses RLS using Admin client.
+   * Create a new product. Bypasses RLS via Admin client.
    */
-  async createItem(item: MenuItem) {
+  async createItem(product: Product) {
     const { data, error } = await supabaseAdmin
-      .from('menu_items')
-      .insert(item)
+      .from('products')
+      .insert(product)
       .select()
       .single();
 
@@ -53,12 +89,12 @@ export class MenuRepository {
   }
 
   /**
-   * Update an existing menu item.
+   * Update an existing product.
    */
-  async updateItem(id: string, item: Partial<MenuItem>) {
+  async updateItem(id: string, product: Partial<Product>) {
     const { data, error } = await supabaseAdmin
-      .from('menu_items')
-      .update(item)
+      .from('products')
+      .update(product)
       .eq('id', id)
       .select()
       .single();
@@ -68,11 +104,11 @@ export class MenuRepository {
   }
 
   /**
-   * Delete a menu item.
+   * Delete a product.
    */
   async deleteItem(id: string) {
     const { error } = await supabaseAdmin
-      .from('menu_items')
+      .from('products')
       .delete()
       .eq('id', id);
 

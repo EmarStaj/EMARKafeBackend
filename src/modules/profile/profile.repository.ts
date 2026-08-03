@@ -1,12 +1,11 @@
-import { getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export class ProfileRepository {
   /**
-   * Fetch user profile by ID using user-bound Supabase client.
+   * Fetch user profile by ID. Bypasses RLS using Admin client.
    */
-  async getProfile(userId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async getProfile(userId: string, _token: string) {
+    const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -17,14 +16,12 @@ export class ProfileRepository {
   }
 
   /**
-   * Update profile fields in the database.
+   * Upsert profile fields in the database. Bypasses RLS.
    */
-  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string }, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string }, _token: string) {
+    const { data, error } = await supabaseAdmin
       .from('profiles')
-      .update(profileData)
-      .eq('id', userId)
+      .upsert({ id: userId, ...profileData })
       .select()
       .single();
 

@@ -2,7 +2,7 @@ import { getSupabaseForUser } from '../../config/supabase';
 
 export class FavoritesRepository {
   /**
-   * Fetch user's bookmarked menu items, joining with menu_items details.
+   * Fetch user's bookmarked products, joining with product details.
    */
   async getFavorites(token: string) {
     const supabaseClient = getSupabaseForUser(token);
@@ -11,14 +11,14 @@ export class FavoritesRepository {
       .select(`
         id,
         created_at,
-        menu_item_id,
-        menu_items (
+        product_id,
+        products (
           id,
           name,
-          price,
+          base_price,
           description,
           image_url,
-          category
+          category_id
         )
       `);
 
@@ -27,15 +27,15 @@ export class FavoritesRepository {
   }
 
   /**
-   * Check if user already favorited an item.
+   * Check if user already bookmarked a product.
    */
-  async findFavorite(userId: string, menuItemId: string, token: string) {
+  async findFavorite(userId: string, productId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('favorites')
       .select('*')
       .eq('user_id', userId)
-      .eq('menu_item_id', menuItemId)
+      .eq('product_id', productId)
       .maybeSingle();
 
     if (error) throw error;
@@ -43,13 +43,13 @@ export class FavoritesRepository {
   }
 
   /**
-   * Add an item to favorites.
+   * Add a product to favorites.
    */
-  async addFavorite(userId: string, menuItemId: string, token: string) {
+  async addFavorite(userId: string, productId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('favorites')
-      .insert({ user_id: userId, menu_item_id: menuItemId })
+      .insert({ user_id: userId, product_id: productId })
       .select()
       .single();
 
@@ -58,15 +58,15 @@ export class FavoritesRepository {
   }
 
   /**
-   * Remove item from favorites.
+   * Remove a product from favorites.
    */
-  async removeFavorite(userId: string, menuItemId: string, token: string) {
+  async removeFavorite(userId: string, productId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { error } = await supabaseClient
       .from('favorites')
       .delete()
       .eq('user_id', userId)
-      .eq('menu_item_id', menuItemId);
+      .eq('product_id', productId);
 
     if (error) throw error;
   }

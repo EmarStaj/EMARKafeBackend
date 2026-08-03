@@ -28,8 +28,8 @@ export class FavoritesController {
       const token = req.token;
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const { menu_item_id } = req.body;
-      const data = await this.favoritesService.addFavorite(userId, menu_item_id, token);
+      const { product_id } = req.body;
+      const data = await this.favoritesService.addFavorite(userId, product_id, token);
       sendSuccess(res, data, 'Added to favorites successfully.', 201);
     } catch (error) {
       next(error);
@@ -42,8 +42,8 @@ export class FavoritesController {
       const token = req.token;
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const { menuItemId } = req.params;
-      await this.favoritesService.removeFavorite(userId, menuItemId, token);
+      const { productId } = req.params;
+      await this.favoritesService.removeFavorite(userId, productId, token);
       sendSuccess(res, null, 'Removed from favorites successfully.');
     } catch (error) {
       next(error);

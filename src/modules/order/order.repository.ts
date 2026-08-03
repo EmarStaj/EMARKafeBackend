@@ -2,28 +2,35 @@ import { getSupabaseForUser } from '../../config/supabase';
 
 export interface OrderInput {
   user_id: string;
-  total_amount: number;
-  status?: string;
-  notes?: string;
-  table_number?: string;
+  branch_id: string;
+  total_price: number;
+  status?: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 }
 
 export interface OrderItemInput {
   order_id: string;
-  menu_item_id: string;
+  product_id: string;
   quantity: number;
-  price_at_order: number;
+  selected_options?: any[];
+  unit_price: number;
+  product_name: string;
+  category_name?: string;
 }
 
 export class OrderRepository {
   /**
-   * Create an order header record.
+   * Create an order record.
    */
   async createOrder(order: OrderInput, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('orders')
-      .insert(order)
+      .insert({
+        user_id: order.user_id,
+        branch_id: order.branch_id,
+        total_price: order.total_price,
+        status: order.status || 'created'
+      })
       .select()
       .single();
 
@@ -32,13 +39,21 @@ export class OrderRepository {
   }
 
   /**
-   * Insert items belonging to an order.
+   * Insert items for an order.
    */
   async createOrderItems(orderItems: OrderItemInput[], token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('order_items')
-      .insert(orderItems)
+      .insert(orderItems.map(item => ({
+        order_id: item.order_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        selected_options: item.selected_options || [],
+        unit_price: item.unit_price,
+        product_name: item.product_name,
+        category_name: item.category_name || ''
+      })))
       .select();
 
     if (error) throw error;
@@ -46,7 +61,7 @@ export class OrderRepository {
   }
 
   /**
-   * Fetch all orders for a specific user, along with their order items.
+   * Fetch all orders for a specific user.
    */
   async getOrders(userId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
@@ -54,20 +69,24 @@ export class OrderRepository {
       .from('orders')
       .select(`
         id,
-        total_amount,
+        branch_id,
         status,
-        notes,
-        table_number,
+        total_price,
         created_at,
+        completed_at,
+        branches (
+          id,
+          name,
+          address
+        ),
         order_items (
           id,
+          product_id,
           quantity,
-          price_at_order,
-          menu_items (
-            id,
-            name,
-            image_url
-          )
+          selected_options,
+          unit_price,
+          product_name,
+          category_name
         )
       `)
       .eq('user_id', userId)
@@ -78,7 +97,7 @@ export class OrderRepository {
   }
 
   /**
-   * Fetch details of a single order.
+   * Fetch detailed view of a single order.
    */
   async getOrderById(orderId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
@@ -86,21 +105,24 @@ export class OrderRepository {
       .from('orders')
       .select(`
         id,
-        total_amount,
+        branch_id,
         status,
-        notes,
-        table_number,
+        total_price,
         created_at,
+        completed_at,
+        branches (
+          id,
+          name,
+          address
+        ),
         order_items (
           id,
+          product_id,
           quantity,
-          price_at_order,
-          menu_items (
-            id,
-            name,
-            price,
-            image_url
-          )
+          selected_options,
+          unit_price,
+          product_name,
+          category_name
         )
       `)
       .eq('id', orderId)

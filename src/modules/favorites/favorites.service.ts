@@ -16,22 +16,21 @@ export class FavoritesService {
     }
   }
 
-  async addFavorite(userId: string, menuItemId: string, token: string) {
+  async addFavorite(userId: string, productId: string, token: string) {
     try {
-      // Prevent duplication
-      const existing = await this.favoritesRepository.findFavorite(userId, menuItemId, token);
+      const existing = await this.favoritesRepository.findFavorite(userId, productId, token);
       if (existing) {
-        return existing; // Already in favorites, return gracefully
+        return existing;
       }
-      return await this.favoritesRepository.addFavorite(userId, menuItemId, token);
+      return await this.favoritesRepository.addFavorite(userId, productId, token);
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to add item to favorites.', 400);
     }
   }
 
-  async removeFavorite(userId: string, menuItemId: string, token: string) {
+  async removeFavorite(userId: string, productId: string, token: string) {
     try {
-      await this.favoritesRepository.removeFavorite(userId, menuItemId, token);
+      await this.favoritesRepository.removeFavorite(userId, productId, token);
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to remove item from favorites.', 400);
     }

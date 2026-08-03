@@ -9,10 +9,12 @@ export class MenuController {
     this.menuService = new MenuService();
   }
 
-  getAllItems = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const items = await this.menuService.getAllItems();
-      sendSuccess(res, items, 'Menu items retrieved successfully.');
+      // Admins can see inactive items if they pass query onlyActive=false
+      const onlyActive = req.query.onlyActive !== 'false';
+      const items = await this.menuService.getAllItems(onlyActive);
+      sendSuccess(res, items, 'Products retrieved successfully.');
     } catch (error) {
       next(error);
     }
@@ -22,7 +24,7 @@ export class MenuController {
     try {
       const { id } = req.params;
       const item = await this.menuService.getItemById(id);
-      sendSuccess(res, item, 'Menu item retrieved successfully.');
+      sendSuccess(res, item, 'Product retrieved successfully.');
     } catch (error) {
       next(error);
     }
@@ -30,16 +32,17 @@ export class MenuController {
 
   createItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { name, description, price, category, image_url, is_available } = req.body;
+      const { category_id, name, description, base_price, image_url, is_active, is_loyalty_eligible } = req.body;
       const newItem = await this.menuService.createItem({
+        category_id,
         name,
         description,
-        price,
-        category,
+        base_price,
         image_url,
-        is_available,
+        is_active,
+        is_loyalty_eligible,
       });
-      sendSuccess(res, newItem, 'Menu item created successfully.', 201);
+      sendSuccess(res, newItem, 'Product created successfully.', 201);
     } catch (error) {
       next(error);
     }
@@ -50,7 +53,7 @@ export class MenuController {
       const { id } = req.params;
       const updatedFields = req.body;
       const updatedItem = await this.menuService.updateItem(id, updatedFields);
-      sendSuccess(res, updatedItem, 'Menu item updated successfully.');
+      sendSuccess(res, updatedItem, 'Product updated successfully.');
     } catch (error) {
       next(error);
     }
@@ -60,7 +63,7 @@ export class MenuController {
     try {
       const { id } = req.params;
       await this.menuService.deleteItem(id);
-      sendSuccess(res, null, 'Menu item deleted successfully.');
+      sendSuccess(res, null, 'Product deleted successfully.');
     } catch (error) {
       next(error);
     }

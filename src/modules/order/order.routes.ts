@@ -10,14 +10,13 @@ const controller = new OrderController();
 // Zod Validation Schemas
 const placeOrderSchema = z.object({
   body: z.object({
-    table_number: z.string().optional(),
-    notes: z.string().optional(),
+    branch_id: z.string({ required_error: 'Branch ID is required' }).uuid('Invalid Branch UUID format'),
   }),
 });
 
 const orderIdSchema = z.object({
   params: z.object({
-    id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid order ID format'),
+    id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid Order UUID format'),
   }),
 });
 

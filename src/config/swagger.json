@@ -3,7 +3,7 @@
   "info": {
     "title": "EMARKafe Backend API",
     "version": "1.0.0",
-    "description": "EMARKafe Mobile App Backend API documentation with Supabase Authentication."
+    "description": "EMARKafe Mobile App Backend API documentation with Supabase Authentication, aligned with current database schema."
   },
   "servers": [
     {
@@ -15,7 +15,7 @@
     { "name": "System", "description": "System status and health check endpoints" },
     { "name": "Auth", "description": "User registration, authentication and session endpoints" },
     { "name": "Profile", "description": "User profile viewing and editing endpoints" },
-    { "name": "Menu", "description": "Cafe menu items retrieval and management endpoints" },
+    { "name": "Menu", "description": "Cafe products retrieval and management endpoints" },
     { "name": "Cart", "description": "User shopping cart management endpoints" },
     { "name": "Order", "description": "Checkout and order history endpoints" },
     { "name": "Favorites", "description": "User product bookmarked/favorites endpoints" }
@@ -152,14 +152,17 @@
     "/api/menu": {
       "get": {
         "tags": ["Menu"],
-        "summary": "List all menu items",
+        "summary": "List all menu products",
+        "parameters": [
+          { "name": "onlyActive", "in": "query", "required": false, "schema": { "type": "boolean", "default": true }, "description": "Admins can set to false to view inactive products" }
+        ],
         "responses": {
-          "200": { "description": "Array of menu items" }
+          "200": { "description": "Array of products" }
         }
       },
       "post": {
         "tags": ["Menu"],
-        "summary": "Create new menu item",
+        "summary": "Create new product item",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -167,42 +170,43 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "price", "category"],
+                "required": ["name", "base_price", "category_id"],
                 "properties": {
                   "name": { "type": "string" },
                   "description": { "type": "string" },
-                  "price": { "type": "number" },
-                  "category": { "type": "string" },
+                  "base_price": { "type": "number" },
+                  "category_id": { "type": "string", "format": "uuid" },
                   "image_url": { "type": "string", "format": "uri" },
-                  "is_available": { "type": "boolean" }
+                  "is_active": { "type": "boolean" },
+                  "is_loyalty_eligible": { "type": "boolean" }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Menu item created" }
+          "201": { "description": "Product created" }
         }
       }
     },
     "/api/menu/{id}": {
       "get": {
         "tags": ["Menu"],
-        "summary": "Get menu item by ID",
+        "summary": "Get product item by ID",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
-          "200": { "description": "Menu item details" },
+          "200": { "description": "Product item details" },
           "404": { "description": "Not found" }
         }
       },
       "put": {
         "tags": ["Menu"],
-        "summary": "Update menu item",
+        "summary": "Update product item",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "requestBody": {
           "required": true,
@@ -213,25 +217,26 @@
                 "properties": {
                   "name": { "type": "string" },
                   "description": { "type": "string" },
-                  "price": { "type": "number" },
-                  "category": { "type": "string" },
+                  "base_price": { "type": "number" },
+                  "category_id": { "type": "string", "format": "uuid" },
                   "image_url": { "type": "string", "format": "uri" },
-                  "is_available": { "type": "boolean" }
+                  "is_active": { "type": "boolean" },
+                  "is_loyalty_eligible": { "type": "boolean" }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Updated menu item details" }
+          "200": { "description": "Updated product details" }
         }
       },
       "delete": {
         "tags": ["Menu"],
-        "summary": "Delete menu item",
+        "summary": "Delete product",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
           "200": { "description": "Deleted successfully" }
@@ -244,7 +249,7 @@
         "summary": "Retrieve user shopping cart",
         "security": [{ "BearerAuth": [] }],
         "responses": {
-          "200": { "description": "User cart items" }
+          "200": { "description": "User cart and items" }
         }
       },
       "post": {
@@ -257,10 +262,15 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["menu_item_id", "quantity"],
+                "required": ["product_id", "quantity"],
                 "properties": {
-                  "menu_item_id": { "type": "string", "format": "uuid" },
-                  "quantity": { "type": "integer", "minimum": 1 }
+                  "product_id": { "type": "string", "format": "uuid" },
+                  "quantity": { "type": "integer", "minimum": 1 },
+                  "selected_options": {
+                    "type": "array",
+                    "items": { "type": "object" },
+                    "description": "Optional custom selected product options"
+                  }
                 }
               }
             }
@@ -285,7 +295,7 @@
         "summary": "Update cart item quantity",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "requestBody": {
           "required": true,
@@ -310,7 +320,7 @@
         "summary": "Remove single item from cart",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
           "200": { "description": "Item removed" }
@@ -323,13 +333,14 @@
         "summary": "Place order from cart",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["branch_id"],
                 "properties": {
-                  "table_number": { "type": "string" },
-                  "notes": { "type": "string" }
+                  "branch_id": { "type": "string", "format": "uuid", "description": "Branch where order is placed" }
                 }
               }
             }
@@ -372,7 +383,7 @@
       },
       "post": {
         "tags": ["Favorites"],
-        "summary": "Add item to favorites",
+        "summary": "Add product to favorites",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -380,9 +391,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["menu_item_id"],
+                "required": ["product_id"],
                 "properties": {
-                  "menu_item_id": { "type": "string", "format": "uuid" }
+                  "product_id": { "type": "string", "format": "uuid" }
                 }
               }
             }
@@ -393,13 +404,13 @@
         }
       }
     },
-    "/api/favorites/{menuItemId}": {
+    "/api/favorites/{productId}": {
       "delete": {
         "tags": ["Favorites"],
-        "summary": "Remove item from favorites",
+        "summary": "Remove product from favorites",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
-          { "name": "menuItemId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          { "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
           "200": { "description": "Removed from favorites" }

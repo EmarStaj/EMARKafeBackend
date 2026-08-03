@@ -10,13 +10,13 @@ const controller = new FavoritesController();
 // Zod Validation Schemas
 const addFavoriteSchema = z.object({
   body: z.object({
-    menu_item_id: z.string({ required_error: 'Menu item ID is required' }).uuid('Invalid UUID format'),
+    product_id: z.string({ required_error: 'Product ID is required' }).uuid('Invalid Product UUID format'),
   }),
 });
 
 const removeFavoriteSchema = z.object({
   params: z.object({
-    menuItemId: z.string({ required_error: 'Menu item ID parameter is required' }).uuid('Invalid UUID format'),
+    productId: z.string({ required_error: 'Product ID parameter is required' }).uuid('Invalid Product UUID format'),
   }),
 });
 
@@ -25,6 +25,6 @@ router.use(requireAuth);
 
 router.get('/', controller.getFavorites);
 router.post('/', validate(addFavoriteSchema), controller.addFavorite);
-router.delete('/:menuItemId', validate(removeFavoriteSchema), controller.removeFavorite);
+router.delete('/:productId', validate(removeFavoriteSchema), controller.removeFavorite);
 
 export default router;

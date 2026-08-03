@@ -1,61 +1,114 @@
 import { getSupabaseForUser } from '../../config/supabase';
 
-export interface CartItem {
-  id?: string;
+export interface Cart {
+  id: string;
   user_id: string;
-  menu_item_id: string;
+  status: 'active' | 'converted' | 'abandoned';
+}
+
+export interface CartItemInput {
+  cart_id: string;
+  product_id: string;
   quantity: number;
+  selected_options?: any[];
+  unit_price: number;
 }
 
 export class CartRepository {
   /**
-   * Fetch current user's cart items, joining with menu_items details.
+   * Finds the current active cart for a user. If none exists, creates one.
    */
-  async getCart(token: string) {
+  async getOrCreateActiveCart(userId: string, token: string): Promise<Cart> {
     const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
-      .from('cart_items')
-      .select(`
-        id,
-        quantity,
-        menu_item_id,
-        menu_items (
-          id,
-          name,
-          price,
-          image_url,
-          category
-        )
-      `);
 
-    if (error) throw error;
-    return data;
+    // 1. Try to find an active cart
+    const { data: activeCart, error: findError } = await supabaseClient
+      .from('carts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (findError) throw findError;
+    if (activeCart) return activeCart;
+
+    // 2. Create one if it does not exist
+    const { data: newCart, error: createError } = await supabaseClient
+      .from('carts')
+      .insert({ user_id: userId, status: 'active' })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+    return newCart;
   }
 
   /**
-   * Check if a menu item is already in user's cart.
+   * Fetch user's active cart and its items, joined with products.
    */
-  async findCartItem(userId: string, menuItemId: string, token: string) {
+  async getCart(userId: string, token: string) {
+    const activeCart = await this.getOrCreateActiveCart(userId, token);
+    const supabaseClient = getSupabaseForUser(token);
+
+    const { data: items, error } = await supabaseClient
+      .from('cart_items')
+      .select(`
+        id,
+        cart_id,
+        product_id,
+        quantity,
+        selected_options,
+        unit_price,
+        products (
+          id,
+          name,
+          base_price,
+          image_url,
+          category_id,
+          categories (
+            name
+          )
+        )
+      `)
+      .eq('cart_id', activeCart.id);
+
+    if (error) throw error;
+    
+    return {
+      cart: activeCart,
+      items: items || []
+    };
+  }
+
+  /**
+   * Find cart items inside a specific cart for a product.
+   */
+  async getCartItemsByProduct(cartId: string, productId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('cart_items')
       .select('*')
-      .eq('user_id', userId)
-      .eq('menu_item_id', menuItemId)
-      .maybeSingle();
+      .eq('cart_id', cartId)
+      .eq('product_id', productId);
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 
   /**
-   * Insert new cart item or update quantity.
+   * Add a new item to cart.
    */
-  async addToCart(userId: string, menuItemId: string, quantity: number, token: string) {
+  async addToCart(item: CartItemInput, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { data, error } = await supabaseClient
       .from('cart_items')
-      .insert({ user_id: userId, menu_item_id: menuItemId, quantity })
+      .insert({
+        cart_id: item.cart_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        selected_options: item.selected_options || [],
+        unit_price: item.unit_price
+      })
       .select()
       .single();
 
@@ -64,7 +117,7 @@ export class CartRepository {
   }
 
   /**
-   * Update quantity of an existing cart item.
+   * Update quantity of a cart item.
    */
   async updateCartItem(cartItemId: string, quantity: number, token: string) {
     const supabaseClient = getSupabaseForUser(token);
@@ -93,15 +146,31 @@ export class CartRepository {
   }
 
   /**
-   * Clear all items in user's cart.
+   * Clear all items in a specific active cart.
    */
-  async clearCart(userId: string, token: string) {
+  async clearCart(cartId: string, token: string) {
     const supabaseClient = getSupabaseForUser(token);
     const { error } = await supabaseClient
       .from('cart_items')
       .delete()
-      .eq('user_id', userId);
+      .eq('cart_id', cartId);
 
     if (error) throw error;
+  }
+
+  /**
+   * Update cart status (e.g., converted upon order checkout).
+   */
+  async updateCartStatus(cartId: string, status: 'active' | 'converted' | 'abandoned', token: string) {
+    const supabaseClient = getSupabaseForUser(token);
+    const { data, error } = await supabaseClient
+      .from('carts')
+      .update({ status })
+      .eq('id', cartId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }

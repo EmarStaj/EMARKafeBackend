@@ -1,4 +1,4 @@
-import { MenuRepository, MenuItem } from './menu.repository';
+import { MenuRepository, Product } from './menu.repository';
 import { AppError } from '../../utils/app-error';
 
 export class MenuService {
@@ -8,11 +8,11 @@ export class MenuService {
     this.menuRepository = new MenuRepository();
   }
 
-  async getAllItems() {
+  async getAllItems(onlyActive = true) {
     try {
-      return await this.menuRepository.getAllItems();
+      return await this.menuRepository.getAllItems(onlyActive);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to retrieve menu items', 400);
+      throw new AppError(error.message || 'Failed to retrieve products.', 400);
     }
   }
 
@@ -22,41 +22,41 @@ export class MenuService {
     } catch (error: any) {
       const isNotFound = error.code === 'PGRST116';
       throw new AppError(
-        isNotFound ? 'Menu item not found' : error.message,
+        isNotFound ? 'Product not found.' : error.message,
         isNotFound ? 404 : 400
       );
     }
   }
 
-  async createItem(item: MenuItem) {
-    if (item.price <= 0) {
-      throw new AppError('Price must be greater than 0', 400);
+  async createItem(product: Product) {
+    if (product.base_price <= 0) {
+      throw new AppError('Base price must be greater than 0.', 400);
     }
     try {
-      return await this.menuRepository.createItem(item);
+      return await this.menuRepository.createItem(product);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to create menu item', 400);
+      throw new AppError(error.message || 'Failed to create product.', 400);
     }
   }
 
-  async updateItem(id: string, item: Partial<MenuItem>) {
-    if (item.price !== undefined && item.price <= 0) {
-      throw new AppError('Price must be greater than 0', 400);
+  async updateItem(id: string, product: Partial<Product>) {
+    if (product.base_price !== undefined && product.base_price <= 0) {
+      throw new AppError('Base price must be greater than 0.', 400);
     }
     try {
-      return await this.menuRepository.updateItem(id, item);
+      return await this.menuRepository.updateItem(id, product);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to update menu item', 400);
+      throw new AppError(error.message || 'Failed to update product.', 400);
     }
   }
 
   async deleteItem(id: string) {
     try {
-      // Check if item exists first
+      // Validate that product exists
       await this.getItemById(id);
       await this.menuRepository.deleteItem(id);
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to delete menu item', 400);
+      throw new AppError(error.message || 'Failed to delete product.', 400);
     }
   }
 }

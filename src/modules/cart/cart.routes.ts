@@ -10,8 +10,9 @@ const controller = new CartController();
 // Zod Validation Schemas
 const addToCartSchema = z.object({
   body: z.object({
-    menu_item_id: z.string({ required_error: 'Menu item ID is required' }).uuid('Invalid menu item ID format'),
+    product_id: z.string({ required_error: 'Product ID is required' }).uuid('Invalid Product UUID format'),
     quantity: z.number({ required_error: 'Quantity is required' }).int().positive('Quantity must be positive'),
+    selected_options: z.array(z.any()).optional(),
   }),
 });
 
@@ -20,13 +21,13 @@ const updateCartItemSchema = z.object({
     quantity: z.number({ required_error: 'Quantity is required' }).int('Quantity must be an integer'),
   }),
   params: z.object({
-    id: z.string({ required_error: 'Cart item ID parameter is required' }),
+    id: z.string({ required_error: 'Cart item ID parameter is required' }).uuid('Invalid Cart Item UUID format'),
   }),
 });
 
 const cartItemIdSchema = z.object({
   params: z.object({
-    id: z.string({ required_error: 'Cart item ID parameter is required' }),
+    id: z.string({ required_error: 'Cart item ID parameter is required' }).uuid('Invalid Cart Item UUID format'),
   }),
 });
 

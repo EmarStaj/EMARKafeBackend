@@ -16,8 +16,8 @@ export class OrderController {
       const token = req.token;
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const { table_number, notes } = req.body;
-      const order = await this.orderService.placeOrder(userId, { table_number, notes }, token);
+      const { branch_id } = req.body;
+      const order = await this.orderService.placeOrder(userId, branch_id, token);
       sendSuccess(res, order, 'Order placed successfully.', 201);
     } catch (error) {
       next(error);

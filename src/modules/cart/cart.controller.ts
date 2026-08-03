@@ -12,10 +12,11 @@ export class CartController {
 
   getCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const userId = req.user?.id;
       const token = req.token;
-      if (!token) throw new AppError('Unauthorized', 401);
+      if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const cart = await this.cartService.getCart(token);
+      const cart = await this.cartService.getCart(userId, token);
       sendSuccess(res, cart, 'Cart retrieved successfully.');
     } catch (error) {
       next(error);
@@ -28,8 +29,8 @@ export class CartController {
       const token = req.token;
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const { menu_item_id, quantity } = req.body;
-      const data = await this.cartService.addToCart(userId, menu_item_id, quantity, token);
+      const { product_id, quantity, selected_options } = req.body;
+      const data = await this.cartService.addToCart(userId, product_id, quantity, selected_options, token);
       sendSuccess(res, data, 'Item added to cart successfully.', 201);
     } catch (error) {
       next(error);
