@@ -1,0 +1,410 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EMARKafe Backend API",
+    "version": "1.0.0",
+    "description": "EMARKafe Mobile App Backend API documentation with Supabase Authentication."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    { "name": "System", "description": "System status and health check endpoints" },
+    { "name": "Auth", "description": "User registration, authentication and session endpoints" },
+    { "name": "Profile", "description": "User profile viewing and editing endpoints" },
+    { "name": "Menu", "description": "Cafe menu items retrieval and management endpoints" },
+    { "name": "Cart", "description": "User shopping cart management endpoints" },
+    { "name": "Order", "description": "Checkout and order history endpoints" },
+    { "name": "Favorites", "description": "User product bookmarked/favorites endpoints" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Supabase JWT access token."
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "description": "Checks if the server is healthy and running.",
+        "responses": {
+          "200": {
+            "description": "Successful health check"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User registration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User registered successfully" },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful, returns tokens" },
+          "400": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "User logout",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Logged out successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get authenticated user details",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Current user data retrieved" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/profile/me": {
+      "get": {
+        "tags": ["Profile"],
+        "summary": "Get current user profile",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profile data retrieved" },
+          "404": { "description": "Profile not found" }
+        }
+      },
+      "put": {
+        "tags": ["Profile"],
+        "summary": "Update user profile",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "avatar_url": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile updated successfully" }
+        }
+      }
+    },
+    "/api/menu": {
+      "get": {
+        "tags": ["Menu"],
+        "summary": "List all menu items",
+        "responses": {
+          "200": { "description": "Array of menu items" }
+        }
+      },
+      "post": {
+        "tags": ["Menu"],
+        "summary": "Create new menu item",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price", "category"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "price": { "type": "number" },
+                  "category": { "type": "string" },
+                  "image_url": { "type": "string", "format": "uri" },
+                  "is_available": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Menu item created" }
+        }
+      }
+    },
+    "/api/menu/{id}": {
+      "get": {
+        "tags": ["Menu"],
+        "summary": "Get menu item by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Menu item details" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "put": {
+        "tags": ["Menu"],
+        "summary": "Update menu item",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "price": { "type": "number" },
+                  "category": { "type": "string" },
+                  "image_url": { "type": "string", "format": "uri" },
+                  "is_available": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated menu item details" }
+        }
+      },
+      "delete": {
+        "tags": ["Menu"],
+        "summary": "Delete menu item",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Deleted successfully" }
+        }
+      }
+    },
+    "/api/cart": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "Retrieve user shopping cart",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "User cart items" }
+        }
+      },
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Add item to cart",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["menu_item_id", "quantity"],
+                "properties": {
+                  "menu_item_id": { "type": "string", "format": "uuid" },
+                  "quantity": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Added to cart" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Clear cart entirely",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Cart cleared successfully" }
+        }
+      }
+    },
+    "/api/cart/{id}": {
+      "put": {
+        "tags": ["Cart"],
+        "summary": "Update cart item quantity",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["quantity"],
+                "properties": {
+                  "quantity": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cart item updated" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Remove single item from cart",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Item removed" }
+        }
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "tags": ["Order"],
+        "summary": "Place order from cart",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "table_number": { "type": "string" },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order placed successfully" }
+        }
+      },
+      "get": {
+        "tags": ["Order"],
+        "summary": "List order history",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of user orders" }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get order details",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Full order items and details" }
+        }
+      }
+    },
+    "/api/favorites": {
+      "get": {
+        "tags": ["Favorites"],
+        "summary": "Get user favorites list",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "User favorites" }
+        }
+      },
+      "post": {
+        "tags": ["Favorites"],
+        "summary": "Add item to favorites",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["menu_item_id"],
+                "properties": {
+                  "menu_item_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Added to favorites" }
+        }
+      }
+    },
+    "/api/favorites/{menuItemId}": {
+      "delete": {
+        "tags": ["Favorites"],
+        "summary": "Remove item from favorites",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "menuItemId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Removed from favorites" }
+        }
+      }
+    }
+  }
+}
