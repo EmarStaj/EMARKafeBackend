@@ -3,6 +3,7 @@ import { CartRepository } from '../cart/cart.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { AppError } from '../../utils/app-error';
+import { supabaseAdmin } from '../../config/supabase';
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -30,7 +31,24 @@ export class OrderService {
       throw new AppError('Cannot place an order. Your cart is empty.', 400);
     }
 
-    // 2. Calculate total price and map order items
+    // 2. Fetch stock availability for all cart items at the target branch in one query
+    const productIds = cartItems.map(item => item.product_id);
+    const { data: availabilityList, error: availabilityError } = await supabaseAdmin
+      .from('branch_products')
+      .select('product_id, is_available')
+      .eq('branch_id', branchId)
+      .in('product_id', productIds);
+
+    if (availabilityError) {
+      throw new AppError('Failed to verify product availability at this branch.', 400);
+    }
+
+    const availabilityMap = new Map<string, boolean>();
+    availabilityList?.forEach(ap => {
+      availabilityMap.set(ap.product_id, ap.is_available);
+    });
+
+    // 3. Calculate total price, validate stock, and map order items
     let totalPrice = 0;
     const itemsToInsert: Omit<OrderItemInput, 'order_id'>[] = [];
 
@@ -40,11 +58,18 @@ export class OrderService {
         throw new AppError('Cart contains invalid product.', 400);
       }
 
+      // If a record exists in branch_products and is_available is explicitly false, it is out of stock!
+      const isAvailable = availabilityMap.get(item.product_id);
+      const productName = product.name || 'Unknown Product';
+      
+      if (isAvailable === false) {
+        throw new AppError(`Product "${productName}" is currently out of stock at this branch.`, 400);
+      }
+
       const itemTotalPrice = Number(item.unit_price) * item.quantity;
       totalPrice += itemTotalPrice;
 
       // Copying snapshots of names at checkout
-      const productName = product.name || 'Unknown Product';
       const categoryName = product.categories?.name || 'General';
 
       itemsToInsert.push({
