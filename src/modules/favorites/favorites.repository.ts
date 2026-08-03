@@ -1,16 +1,16 @@
-import { getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export class FavoritesRepository {
   /**
    * Fetch user's bookmarked products, joining with product details.
    */
-  async getFavorites(token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async getFavorites(_token: string, userId?: string) {
+    let query = supabaseAdmin
       .from('favorites')
       .select(`
         id,
         created_at,
+        user_id,
         product_id,
         products (
           id,
@@ -22,6 +22,11 @@ export class FavoritesRepository {
         )
       `);
 
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   }
@@ -29,9 +34,8 @@ export class FavoritesRepository {
   /**
    * Check if user already bookmarked a product.
    */
-  async findFavorite(userId: string, productId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async findFavorite(userId: string, productId: string, _token: string) {
+    const { data, error } = await supabaseAdmin
       .from('favorites')
       .select('*')
       .eq('user_id', userId)
@@ -45,9 +49,8 @@ export class FavoritesRepository {
   /**
    * Add a product to favorites.
    */
-  async addFavorite(userId: string, productId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async addFavorite(userId: string, productId: string, _token: string) {
+    const { data, error } = await supabaseAdmin
       .from('favorites')
       .insert({ user_id: userId, product_id: productId })
       .select()
@@ -60,9 +63,8 @@ export class FavoritesRepository {
   /**
    * Remove a product from favorites.
    */
-  async removeFavorite(userId: string, productId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { error } = await supabaseClient
+  async removeFavorite(userId: string, productId: string, _token: string) {
+    const { error } = await supabaseAdmin
       .from('favorites')
       .delete()
       .eq('user_id', userId)

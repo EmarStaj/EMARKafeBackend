@@ -12,10 +12,11 @@ export class FavoritesController {
 
   getFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const userId = req.user?.id;
       const token = req.token;
-      if (!token) throw new AppError('Unauthorized', 401);
+      if (!userId || !token) throw new AppError('Unauthorized', 401);
 
-      const favorites = await this.favoritesService.getFavorites(token);
+      const favorites = await this.favoritesService.getFavorites(token, userId);
       sendSuccess(res, favorites, 'Favorites retrieved successfully.');
     } catch (error) {
       next(error);

@@ -8,9 +8,9 @@ export class FavoritesService {
     this.favoritesRepository = new FavoritesRepository();
   }
 
-  async getFavorites(token: string) {
+  async getFavorites(token: string, userId?: string) {
     try {
-      return await this.favoritesRepository.getFavorites(token);
+      return await this.favoritesRepository.getFavorites(token, userId);
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to retrieve favorites.', 400);
     }
