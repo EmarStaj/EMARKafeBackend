@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface Product {
   id?: string;
@@ -16,7 +16,7 @@ export class MenuRepository {
    * Fetch all active products (menu items), joined with category information.
    */
   async getAllItems(onlyActive = true) {
-    let query = supabase
+    let query = supabaseAdmin
       .from('products')
       .select(`
         id,
@@ -49,7 +49,7 @@ export class MenuRepository {
    * Fetch a single product by ID.
    */
   async getItemById(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select(`
         id,

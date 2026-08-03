@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface Category {
   id?: string;
@@ -11,7 +11,7 @@ export class CategoryRepository {
    * Fetch all categories sorted by sort_order.
    */
   async getAllCategories() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('categories')
       .select('*')
       .order('sort_order', { ascending: true });
@@ -24,7 +24,7 @@ export class CategoryRepository {
    * Fetch a single category by ID.
    */
   async getCategoryById(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('categories')
       .select('*')
       .eq('id', id)

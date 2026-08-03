@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface Branch {
   id?: string;
@@ -15,7 +15,7 @@ export class BranchRepository {
    * Fetch all branches.
    */
   async getAllBranches(onlyActive = true) {
-    let query = supabase.from('branches').select('*');
+    let query = supabaseAdmin.from('branches').select('*');
     if (onlyActive) {
       query = query.eq('is_active', true);
     }
@@ -28,7 +28,7 @@ export class BranchRepository {
    * Fetch a single branch by ID.
    */
   async getBranchById(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('branches')
       .select('*')
       .eq('id', id)
@@ -83,7 +83,7 @@ export class BranchRepository {
    * Get product stock list / availability for a specific branch.
    */
   async getBranchProducts(branchId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('branch_products')
       .select(`
         id,

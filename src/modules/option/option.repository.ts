@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface ProductOption {
   id?: string;
@@ -20,7 +20,7 @@ export class OptionRepository {
    * Fetch all options for a product, joined with their selectable values.
    */
   async getProductOptions(productId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('product_options')
       .select(`
         id,
