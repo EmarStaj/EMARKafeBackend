@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { OrderController } from './order.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
+import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
@@ -20,11 +21,60 @@ const orderIdSchema = z.object({
   }),
 });
 
+const updateStatusSchema = z.object({
+  params: z.object({
+    id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid Order UUID format'),
+  }),
+  body: z.object({
+    status: z.enum(['created', 'preparing', 'ready', 'completed', 'cancelled'], {
+      required_error: 'Status is required and must be a valid status state',
+    }),
+  }),
+});
+
 // All order endpoints require authentication
 router.use(requireAuth);
 
-router.post('/', validate(placeOrderSchema), controller.placeOrder);
-router.get('/', controller.getOrders);
-router.get('/:id', validate(orderIdSchema), controller.getOrderById);
+// 1. Branch / Barista endpoints (Place static routes first to prevent routing clashes)
+router.get(
+  '/branch',
+  requireRole(['barista', 'branch_manager']),
+  controller.getBranchOrders
+);
+
+router.put(
+  '/:id/status',
+  requireRole(['barista', 'branch_manager', 'admin']),
+  validate(updateStatusSchema),
+  controller.updateOrderStatus
+);
+
+// 2. Customer endpoints
+router.post(
+  '/',
+  requireRole(['customer']),
+  validate(placeOrderSchema),
+  controller.placeOrder
+);
+
+router.get(
+  '/',
+  requireRole(['customer']),
+  controller.getOrders
+);
+
+router.get(
+  '/:id',
+  requireRole(['customer', 'barista', 'branch_manager', 'admin']),
+  validate(orderIdSchema),
+  controller.getOrderById
+);
+
+router.put(
+  '/:id/cancel',
+  requireRole(['customer']),
+  validate(orderIdSchema),
+  controller.cancelOrder
+);
 
 export default router;

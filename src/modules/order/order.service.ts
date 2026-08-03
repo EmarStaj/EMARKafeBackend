@@ -1,14 +1,20 @@
 import { OrderRepository, OrderItemInput } from './order.repository';
 import { CartRepository } from '../cart/cart.repository';
+import { MenuRepository } from '../menu/menu.repository';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { AppError } from '../../utils/app-error';
 
 export class OrderService {
   private orderRepository: OrderRepository;
   private cartRepository: CartRepository;
+  private menuRepository: MenuRepository;
+  private loyaltyService: LoyaltyService;
 
   constructor() {
     this.orderRepository = new OrderRepository();
     this.cartRepository = new CartRepository();
+    this.menuRepository = new MenuRepository();
+    this.loyaltyService = new LoyaltyService();
   }
 
   /**
@@ -94,6 +100,87 @@ export class OrderService {
         isNotFound ? 'Order not found.' : error.message,
         isNotFound ? 404 : 400
       );
+    }
+  }
+
+  /**
+   * Fetch all orders for a branch (Barista/Manager view).
+   */
+  async getBranchOrders(branchId: string) {
+    try {
+      return await this.orderRepository.getBranchOrders(branchId);
+    } catch (error: any) {
+      throw new AppError(error.message || 'Failed to retrieve branch orders.', 400);
+    }
+  }
+
+  /**
+   * Update order status by a barista or branch manager.
+   * If status transitions to 'completed', awards stamps for loyalty eligible products.
+   */
+  async updateOrderStatus(orderId: string, status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled', userProfile: any) {
+    try {
+      // 1. Fetch order details (bypassing user RLS using admin)
+      const order = await this.orderRepository.getOrderByIdAdmin(orderId);
+      if (!order) {
+        throw new AppError('Order not found.', 404);
+      }
+
+      // 2. Baristas can only process orders from their own branch!
+      if (userProfile.role === 'barista' && userProfile.branch_id !== order.branch_id) {
+        throw new AppError('Forbidden: Baristas can only update orders belonging to their own branch.', 403);
+      }
+
+      // 3. Perform update (and set completed_at timestamp if status is 'completed')
+      const completedAt = status === 'completed' ? new Date().toISOString() : undefined;
+      const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status, completedAt);
+
+      // 4. If status is completed, process loyalty points
+      if (status === 'completed' && order.order_items) {
+        for (const item of order.order_items) {
+          try {
+            // Find product category and eligibility
+            const product = await this.menuRepository.getItemById(item.product_id);
+            if (product && product.is_loyalty_eligible) {
+              // Award stamps to the user
+              await this.loyaltyService.addStampsForProduct(order.user_id, product.category_id, item.quantity);
+            }
+          } catch (e) {
+            console.error(`Failed to process loyalty stamps for order item ${item.id}:`, e);
+          }
+        }
+      }
+
+      // 5. Simulate push notification triggers
+      if (status === 'ready') {
+        console.log(`[Push Notification Simulator] Sent: 'Siparişiniz Hazır!' to user ${order.user_id}`);
+      }
+
+      return updatedOrder;
+    } catch (error: any) {
+      throw new AppError(error.message || 'Failed to update order status.', 400);
+    }
+  }
+
+  /**
+   * Cancel an order by the customer. Only allowed before preparation begins ('created' status).
+   */
+  async cancelOrder(orderId: string, userId: string, token: string) {
+    try {
+      // Fetch order details
+      const order = await this.orderRepository.getOrderById(orderId, token);
+      if (!order || order.user_id !== userId) {
+        throw new AppError('Order not found.', 404);
+      }
+
+      // Customers can only cancel orders in 'created' state
+      if (order.status !== 'created') {
+        throw new AppError('Cannot cancel order. The preparation has already started.', 400);
+      }
+
+      return await this.orderRepository.updateOrderStatus(orderId, 'cancelled');
+    } catch (error: any) {
+      throw new AppError(error.message || 'Failed to cancel order.', 400);
     }
   }
 }

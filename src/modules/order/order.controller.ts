@@ -49,4 +49,47 @@ export class OrderController {
       next(error);
     }
   };
+
+  getBranchOrders = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userProfile = req.profile;
+      if (!userProfile || !userProfile.branch_id) {
+        throw new AppError('Forbidden: You are not assigned to any branch.', 403);
+      }
+
+      const orders = await this.orderService.getBranchOrders(userProfile.branch_id);
+      sendSuccess(res, orders, 'Branch orders retrieved successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateOrderStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userProfile = req.profile;
+      if (!userProfile) throw new AppError('Unauthorized', 401);
+
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const updatedOrder = await this.orderService.updateOrderStatus(id, status, userProfile);
+      sendSuccess(res, updatedOrder, 'Order status updated successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  cancelOrder = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const token = req.token;
+      if (!userId || !token) throw new AppError('Unauthorized', 401);
+
+      const { id } = req.params;
+      const cancelledOrder = await this.orderService.cancelOrder(id, userId, token);
+      sendSuccess(res, cancelledOrder, 'Order cancelled successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
 }

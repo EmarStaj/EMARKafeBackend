@@ -3,7 +3,7 @@
   "info": {
     "title": "EMARKafe Backend API",
     "version": "1.0.0",
-    "description": "EMARKafe Mobile App Backend API documentation with Supabase Authentication, aligned with current database schema."
+    "description": "EMARKafe Mobile App Backend API documentation with Supabase Authentication, aligned with current database schema and role permissions (Customer, Barista, Branch Manager, Admin)."
   },
   "servers": [
     {
@@ -16,9 +16,16 @@
     { "name": "Auth", "description": "User registration, authentication and session endpoints" },
     { "name": "Profile", "description": "User profile viewing and editing endpoints" },
     { "name": "Menu", "description": "Cafe products retrieval and management endpoints" },
+    { "name": "Category", "description": "Cafe category management endpoints (Admin)" },
+    { "name": "Branch", "description": "Branch locations and product availability/stock management endpoints" },
+    { "name": "Option", "description": "Customizable product option groups and values endpoints" },
     { "name": "Cart", "description": "User shopping cart management endpoints" },
-    { "name": "Order", "description": "Checkout and order history endpoints" },
-    { "name": "Favorites", "description": "User product bookmarked/favorites endpoints" }
+    { "name": "Order", "description": "Checkout, order history, cancel, and barista status management endpoints" },
+    { "name": "Favorites", "description": "User product bookmarked/favorites endpoints" },
+    { "name": "Rating", "description": "Product rating and review score endpoints" },
+    { "name": "Loyalty", "description": "Customer loyalty stamps and rewards tracking endpoints" },
+    { "name": "Device Token", "description": "Register user FCM push notification tokens" },
+    { "name": "Settings", "description": "System-wide global app configuration endpoints" }
   ],
   "components": {
     "securitySchemes": {
@@ -36,11 +43,7 @@
         "tags": ["System"],
         "summary": "Health check",
         "description": "Checks if the server is healthy and running.",
-        "responses": {
-          "200": {
-            "description": "Successful health check"
-          }
-        }
+        "responses": { "200": { "description": "Successful health check" } }
       }
     },
     "/api/auth/register": {
@@ -127,7 +130,7 @@
       },
       "put": {
         "tags": ["Profile"],
-        "summary": "Update user profile",
+        "summary": "Update user profile (Upsert)",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -149,20 +152,187 @@
         }
       }
     },
+    "/api/categories": {
+      "get": {
+        "tags": ["Category"],
+        "summary": "List all categories",
+        "responses": { "200": { "description": "Categories list" } }
+      },
+      "post": {
+        "tags": ["Category"],
+        "summary": "Create new category",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "sort_order": { "type": "integer", "default": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Category created" } }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "tags": ["Category"],
+        "summary": "Get category details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Category data" } }
+      },
+      "put": {
+        "tags": ["Category"],
+        "summary": "Update category",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "sort_order": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Category updated" } }
+      },
+      "delete": {
+        "tags": ["Category"],
+        "summary": "Delete category",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Category deleted" } }
+      }
+    },
+    "/api/branches": {
+      "get": {
+        "tags": ["Branch"],
+        "summary": "List all branches",
+        "parameters": [{ "name": "onlyActive", "in": "query", "schema": { "type": "boolean", "default": true } }],
+        "responses": { "200": { "description": "Branches list" } }
+      },
+      "post": {
+        "tags": ["Branch"],
+        "summary": "Create new branch",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "address": { "type": "string" },
+                  "lat": { "type": "number" },
+                  "lng": { "type": "number" },
+                  "opening_hours": { "type": "object" },
+                  "is_active": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Branch created" } }
+      }
+    },
+    "/api/branches/{id}": {
+      "get": {
+        "tags": ["Branch"],
+        "summary": "Get branch details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Branch data" } }
+      },
+      "put": {
+        "tags": ["Branch"],
+        "summary": "Update branch",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "address": { "type": "string" },
+                  "lat": { "type": "number" },
+                  "lng": { "type": "number" },
+                  "opening_hours": { "type": "object" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Branch updated" } }
+      },
+      "delete": {
+        "tags": ["Branch"],
+        "summary": "Delete branch",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Branch deleted" } }
+      }
+    },
+    "/api/branches/{branchId}/products": {
+      "get": {
+        "tags": ["Branch"],
+        "summary": "Get product availability for a specific branch",
+        "parameters": [{ "name": "branchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "List of products stock status" } }
+      }
+    },
+    "/api/branches/{branchId}/products/{productId}": {
+      "put": {
+        "tags": ["Branch"],
+        "summary": "Toggle product availability at a branch (Barista, Manager, Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "branchId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["is_available"],
+                "properties": {
+                  "is_available": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Stock status updated" } }
+      }
+    },
     "/api/menu": {
       "get": {
         "tags": ["Menu"],
         "summary": "List all menu products",
-        "parameters": [
-          { "name": "onlyActive", "in": "query", "required": false, "schema": { "type": "boolean", "default": true }, "description": "Admins can set to false to view inactive products" }
-        ],
-        "responses": {
-          "200": { "description": "Array of products" }
-        }
+        "parameters": [{ "name": "onlyActive", "in": "query", "schema": { "type": "boolean", "default": true } }],
+        "responses": { "200": { "description": "Array of products" } }
       },
       "post": {
         "tags": ["Menu"],
-        "summary": "Create new product item",
+        "summary": "Create new product item (Admin)",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -184,30 +354,21 @@
             }
           }
         },
-        "responses": {
-          "201": { "description": "Product created" }
-        }
+        "responses": { "201": { "description": "Product created" } }
       }
     },
     "/api/menu/{id}": {
       "get": {
         "tags": ["Menu"],
         "summary": "Get product item by ID",
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": { "description": "Product item details" },
-          "404": { "description": "Not found" }
-        }
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Product item details" } }
       },
       "put": {
         "tags": ["Menu"],
-        "summary": "Update product item",
+        "summary": "Update product item (Admin)",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "requestBody": {
           "required": true,
           "content": {
@@ -227,20 +388,87 @@
             }
           }
         },
-        "responses": {
-          "200": { "description": "Updated product details" }
-        }
+        "responses": { "200": { "description": "Updated product details" } }
       },
       "delete": {
         "tags": ["Menu"],
-        "summary": "Delete product",
+        "summary": "Delete product (Admin)",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": { "description": "Deleted successfully" }
-        }
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Deleted successfully" } }
+      }
+    },
+    "/api/options/products/{productId}/options": {
+      "get": {
+        "tags": ["Option"],
+        "summary": "List options for a product",
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "List of options and values" } }
+      },
+      "post": {
+        "tags": ["Option"],
+        "summary": "Create new option group for a product (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "is_required": { "type": "boolean", "default": true },
+                  "is_multi_select": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Option group created" } }
+      }
+    },
+    "/api/options/options/{optionId}/values": {
+      "post": {
+        "tags": ["Option"],
+        "summary": "Add selectable value to an option group (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "optionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["label"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "price_delta": { "type": "number", "default": 0 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Option value created" } }
+      }
+    },
+    "/api/options/options/{id}": {
+      "delete": {
+        "tags": ["Option"],
+        "summary": "Delete option group (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Option group deleted" } }
+      }
+    },
+    "/api/options/options/values/{id}": {
+      "delete": {
+        "tags": ["Option"],
+        "summary": "Delete single option value (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Value deleted" } }
       }
     },
     "/api/cart": {
@@ -248,9 +476,7 @@
         "tags": ["Cart"],
         "summary": "Retrieve user shopping cart",
         "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "User cart and items" }
-        }
+        "responses": { "200": { "description": "User cart items" } }
       },
       "post": {
         "tags": ["Cart"],
@@ -266,27 +492,19 @@
                 "properties": {
                   "product_id": { "type": "string", "format": "uuid" },
                   "quantity": { "type": "integer", "minimum": 1 },
-                  "selected_options": {
-                    "type": "array",
-                    "items": { "type": "object" },
-                    "description": "Optional custom selected product options"
-                  }
+                  "selected_options": { "type": "array", "items": { "type": "object" } }
                 }
               }
             }
           }
         },
-        "responses": {
-          "201": { "description": "Added to cart" }
-        }
+        "responses": { "201": { "description": "Added to cart" } }
       },
       "delete": {
         "tags": ["Cart"],
         "summary": "Clear cart entirely",
         "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "Cart cleared successfully" }
-        }
+        "responses": { "200": { "description": "Cart cleared successfully" } }
       }
     },
     "/api/cart/{id}": {
@@ -294,9 +512,7 @@
         "tags": ["Cart"],
         "summary": "Update cart item quantity",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "requestBody": {
           "required": true,
           "content": {
@@ -311,26 +527,20 @@
             }
           }
         },
-        "responses": {
-          "200": { "description": "Cart item updated" }
-        }
+        "responses": { "200": { "description": "Cart item updated" } }
       },
       "delete": {
         "tags": ["Cart"],
         "summary": "Remove single item from cart",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": { "description": "Item removed" }
-        }
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Item removed" } }
       }
     },
     "/api/orders": {
       "post": {
         "tags": ["Order"],
-        "summary": "Place order from cart",
+        "summary": "Place order from cart (Customer)",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -340,23 +550,27 @@
                 "type": "object",
                 "required": ["branch_id"],
                 "properties": {
-                  "branch_id": { "type": "string", "format": "uuid", "description": "Branch where order is placed" }
+                  "branch_id": { "type": "string", "format": "uuid" }
                 }
               }
             }
           }
         },
-        "responses": {
-          "201": { "description": "Order placed successfully" }
-        }
+        "responses": { "201": { "description": "Order placed successfully" } }
       },
       "get": {
         "tags": ["Order"],
-        "summary": "List order history",
+        "summary": "List order history (Customer)",
         "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "List of user orders" }
-        }
+        "responses": { "200": { "description": "List of user orders" } }
+      }
+    },
+    "/api/orders/branch": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "List orders for the barista's branch (Barista, Manager)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "List of branch orders" } }
       }
     },
     "/api/orders/{id}": {
@@ -364,12 +578,40 @@
         "tags": ["Order"],
         "summary": "Get order details",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": { "description": "Full order items and details" }
-        }
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Full order details" } }
+      }
+    },
+    "/api/orders/{id}/status": {
+      "put": {
+        "tags": ["Order"],
+        "summary": "Update order preparing status (Barista, Manager, Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["created", "preparing", "ready", "completed", "cancelled"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Status updated successfully" } }
+      }
+    },
+    "/api/orders/{id}/cancel": {
+      "put": {
+        "tags": ["Order"],
+        "summary": "Cancel order by customer (Allowed only in 'created' status)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Order cancelled successfully" } }
       }
     },
     "/api/favorites": {
@@ -377,9 +619,7 @@
         "tags": ["Favorites"],
         "summary": "Get user favorites list",
         "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": { "description": "User favorites" }
-        }
+        "responses": { "200": { "description": "User favorites" } }
       },
       "post": {
         "tags": ["Favorites"],
@@ -399,9 +639,7 @@
             }
           }
         },
-        "responses": {
-          "201": { "description": "Added to favorites" }
-        }
+        "responses": { "201": { "description": "Added to favorites" } }
       }
     },
     "/api/favorites/{productId}": {
@@ -409,12 +647,101 @@
         "tags": ["Favorites"],
         "summary": "Remove product from favorites",
         "security": [{ "BearerAuth": [] }],
-        "parameters": [
-          { "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
-        ],
-        "responses": {
-          "200": { "description": "Removed from favorites" }
-        }
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Removed from favorites" } }
+      }
+    },
+    "/api/products/{productId}/ratings": {
+      "post": {
+        "tags": ["Rating"],
+        "summary": "Rate purchased product (Customer)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["order_id", "rating"],
+                "properties": {
+                  "order_id": { "type": "string", "format": "uuid" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Rating submitted" } }
+      }
+    },
+    "/api/loyalty/progress": {
+      "get": {
+        "tags": ["Loyalty"],
+        "summary": "Get user stamp progress (Customer)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Loyalty stamp progress" } }
+      }
+    },
+    "/api/loyalty/rewards": {
+      "get": {
+        "tags": ["Loyalty"],
+        "summary": "Get user earned rewards (Customer)",
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Rewards list" } }
+      }
+    },
+    "/api/device-tokens": {
+      "post": {
+        "tags": ["Device Token"],
+        "summary": "Register push token",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fcm_token", "platform"],
+                "properties": {
+                  "fcm_token": { "type": "string" },
+                  "platform": { "type": "string", "enum": ["ios", "android"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Token saved" } }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Get all app settings",
+        "responses": { "200": { "description": "System settings list" } }
+      }
+    },
+    "/api/settings/{key}": {
+      "put": {
+        "tags": ["Settings"],
+        "summary": "Update system setting (Admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [{ "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                  "value": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Setting updated" } }
       }
     }
   }

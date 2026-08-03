@@ -17,6 +17,13 @@ import menuRoutes from './modules/menu/menu.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import orderRoutes from './modules/order/order.routes';
 import favoritesRoutes from './modules/favorites/favorites.routes';
+import categoryRoutes from './modules/category/category.routes';
+import branchRoutes from './modules/branch/branch.routes';
+import optionRoutes from './modules/option/option.routes';
+import ratingRoutes from './modules/rating/rating.routes';
+import loyaltyRoutes from './modules/loyalty/loyalty.routes';
+import deviceTokenRoutes from './modules/device-token/device-token.routes';
+import settingsRoutes from './modules/settings/settings.routes';
 
 dotenv.config();
 
@@ -46,6 +53,13 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/options', optionRoutes);
+app.use('/api', ratingRoutes); // Mounts /products/:productId/ratings under /api
+app.use('/api/loyalty', loyaltyRoutes);
+app.use('/api/device-tokens', deviceTokenRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Fallback for undefined routes (404)
 app.all('*', (req: Request, _res: Response, next: NextFunction) => {

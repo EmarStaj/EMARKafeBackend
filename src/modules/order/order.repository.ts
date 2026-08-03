@@ -1,4 +1,4 @@
-import { getSupabaseForUser } from '../../config/supabase';
+import { getSupabaseForUser, supabaseAdmin } from '../../config/supabase';
 
 export interface OrderInput {
   user_id: string;
@@ -105,6 +105,7 @@ export class OrderRepository {
       .from('orders')
       .select(`
         id,
+        user_id,
         branch_id,
         status,
         total_price,
@@ -126,6 +127,93 @@ export class OrderRepository {
         )
       `)
       .eq('id', orderId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Fetch detailed view of a single order bypassing RLS.
+   */
+  async getOrderByIdAdmin(orderId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        id,
+        user_id,
+        branch_id,
+        status,
+        total_price,
+        created_at,
+        completed_at,
+        order_items (
+          id,
+          product_id,
+          quantity,
+          selected_options,
+          unit_price,
+          product_name,
+          category_name
+        )
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Fetch all orders for a specific branch bypassing RLS.
+   */
+  async getBranchOrders(branchId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        id,
+        user_id,
+        branch_id,
+        status,
+        total_price,
+        created_at,
+        completed_at,
+        profiles (
+          id,
+          full_name,
+          phone
+        ),
+        order_items (
+          id,
+          product_id,
+          quantity,
+          selected_options,
+          unit_price,
+          product_name,
+          category_name
+        )
+      `)
+      .eq('branch_id', branchId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Update order status. Bypasses RLS.
+   */
+  async updateOrderStatus(orderId: string, status: string, completedAt?: string) {
+    const updateData: any = { status, updated_at: new Date().toISOString() };
+    if (completedAt) {
+      updateData.completed_at = completedAt;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .update(updateData)
+      .eq('id', orderId)
+      .select()
       .single();
 
     if (error) throw error;
