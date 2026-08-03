@@ -81,29 +81,52 @@ export class BranchRepository {
 
   /**
    * Get product stock list / availability for a specific branch.
+   * Returns all active products with their availability status at this branch (defaults to true if not explicitly disabled).
    */
   async getBranchProducts(branchId: string) {
-    const { data, error } = await supabaseAdmin
-      .from('branch_products')
+    const { data: allProducts, error: prodError } = await supabaseAdmin
+      .from('products')
       .select(`
         id,
-        branch_id,
-        product_id,
-        is_available,
-        updated_at,
-        updated_by,
-        products (
+        name,
+        base_price,
+        image_url,
+        is_active,
+        category_id,
+        categories (
           id,
           name,
-          base_price,
-          image_url,
-          is_active
+          sort_order
         )
       `)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (prodError) throw prodError;
+
+    const { data: branchStock, error: stockError } = await supabaseAdmin
+      .from('branch_products')
+      .select('product_id, is_available, updated_at, updated_by')
       .eq('branch_id', branchId);
 
-    if (error) throw error;
-    return data;
+    if (stockError) throw stockError;
+
+    const stockMap = new Map<string, any>();
+    branchStock?.forEach(item => {
+      stockMap.set(item.product_id, item);
+    });
+
+    return (allProducts || []).map(prod => {
+      const stockItem = stockMap.get(prod.id);
+      return {
+        product_id: prod.id,
+        branch_id: branchId,
+        is_available: stockItem ? stockItem.is_available : true,
+        updated_at: stockItem ? stockItem.updated_at : null,
+        updated_by: stockItem ? stockItem.updated_by : null,
+        products: prod
+      };
+    });
   }
 
   /**
