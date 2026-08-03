@@ -30,14 +30,15 @@ export class RatingRepository {
   }
 
   /**
-   * Check if user already rated this product.
+   * Check if user already rated this product for a specific order.
    */
-  async findRating(userId: string, productId: string) {
+  async findRatingByOrder(userId: string, productId: string, orderId: string) {
     const { data, error } = await supabaseAdmin
       .from('product_ratings')
       .select('*')
       .eq('user_id', userId)
       .eq('product_id', productId)
+      .eq('order_id', orderId)
       .maybeSingle();
 
     if (error) throw error;
@@ -45,20 +46,21 @@ export class RatingRepository {
   }
 
   /**
-   * Add a new rating or update the existing one.
+   * Add a new rating for a completed order, or update existing rating if already rated in this specific order.
+   * Enables repeated ratings for the same product across different orders.
    */
   async addOrUpdateRating(ratingData: RatingInput) {
-    const existing = await this.findRating(ratingData.user_id, ratingData.product_id);
+    const existing = await this.findRatingByOrder(ratingData.user_id, ratingData.product_id, ratingData.order_id);
 
     let query;
     if (existing) {
-      // Update existing rating
+      // Update existing rating for this specific order
       query = supabaseAdmin
         .from('product_ratings')
-        .update({ rating: ratingData.rating, order_id: ratingData.order_id })
+        .update({ rating: ratingData.rating })
         .eq('id', existing.id);
     } else {
-      // Insert new rating
+      // Insert new rating row for this order (repeated rating model)
       query = supabaseAdmin
         .from('product_ratings')
         .insert(ratingData);

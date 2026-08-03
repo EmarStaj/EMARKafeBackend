@@ -1,13 +1,27 @@
-import { supabase, supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export class SettingsRepository {
   /**
    * Fetch all app settings.
    */
   async getSettings() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('app_settings')
       .select('*');
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Fetch a single setting by key.
+   */
+  async getSettingByKey(key: string) {
+    const { data, error } = await supabaseAdmin
+      .from('app_settings')
+      .select('*')
+      .eq('key', key)
+      .maybeSingle();
 
     if (error) throw error;
     return data;
