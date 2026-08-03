@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { MenuController } from './menu.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
+import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
@@ -46,8 +47,8 @@ router.get('/', controller.getAllItems);
 router.get('/:id', validate(getItemSchema), controller.getItemById);
 
 // Admin-only / Authenticated Endpoints
-router.post('/', requireAuth, validate(createItemSchema), controller.createItem);
-router.put('/:id', requireAuth, validate(updateItemSchema), controller.updateItem);
-router.delete('/:id', requireAuth, validate(getItemSchema), controller.deleteItem);
+router.post('/', requireAuth, requireRole(['admin']), validate(createItemSchema), controller.createItem);
+router.put('/:id', requireAuth, requireRole(['admin']), validate(updateItemSchema), controller.updateItem);
+router.delete('/:id', requireAuth, requireRole(['admin']), validate(getItemSchema), controller.deleteItem);
 
 export default router;
