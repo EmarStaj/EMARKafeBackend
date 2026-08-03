@@ -1,4 +1,4 @@
-import { getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface Cart {
   id: string;
@@ -16,13 +16,11 @@ export interface CartItemInput {
 
 export class CartRepository {
   /**
-   * Finds the current active cart for a user. If none exists, creates one.
+   * Finds the current active cart for a user. If none exists, creates one. Bypasses RLS.
    */
-  async getOrCreateActiveCart(userId: string, token: string): Promise<Cart> {
-    const supabaseClient = getSupabaseForUser(token);
-
+  async getOrCreateActiveCart(userId: string, _token?: string): Promise<Cart> {
     // 1. Try to find an active cart
-    const { data: activeCart, error: findError } = await supabaseClient
+    const { data: activeCart, error: findError } = await supabaseAdmin
       .from('carts')
       .select('*')
       .eq('user_id', userId)
@@ -30,17 +28,17 @@ export class CartRepository {
       .maybeSingle();
 
     if (findError) throw findError;
-    if (activeCart) return activeCart;
+    if (activeCart) return activeCart as Cart;
 
     // 2. Create one if it does not exist
-    const { data: newCart, error: createError } = await supabaseClient
+    const { data: newCart, error: createError } = await supabaseAdmin
       .from('carts')
       .insert({ user_id: userId, status: 'active' })
       .select()
       .single();
 
     if (createError) throw createError;
-    return newCart;
+    return newCart as Cart;
   }
 
   /**
@@ -48,9 +46,8 @@ export class CartRepository {
    */
   async getCart(userId: string, token: string) {
     const activeCart = await this.getOrCreateActiveCart(userId, token);
-    const supabaseClient = getSupabaseForUser(token);
 
-    const { data: items, error } = await supabaseClient
+    const { data: items, error } = await supabaseAdmin
       .from('cart_items')
       .select(`
         id,
@@ -83,9 +80,8 @@ export class CartRepository {
   /**
    * Find cart items inside a specific cart for a product.
    */
-  async getCartItemsByProduct(cartId: string, productId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async getCartItemsByProduct(cartId: string, productId: string, _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('cart_items')
       .select('*')
       .eq('cart_id', cartId)
@@ -98,9 +94,8 @@ export class CartRepository {
   /**
    * Add a new item to cart.
    */
-  async addToCart(item: CartItemInput, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async addToCart(item: CartItemInput, _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('cart_items')
       .insert({
         cart_id: item.cart_id,
@@ -119,9 +114,8 @@ export class CartRepository {
   /**
    * Update quantity of a cart item.
    */
-  async updateCartItem(cartItemId: string, quantity: number, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async updateCartItem(cartItemId: string, quantity: number, _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('cart_items')
       .update({ quantity })
       .eq('id', cartItemId)
@@ -135,9 +129,8 @@ export class CartRepository {
   /**
    * Remove item from cart.
    */
-  async removeFromCart(cartItemId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { error } = await supabaseClient
+  async removeFromCart(cartItemId: string, _token?: string) {
+    const { error } = await supabaseAdmin
       .from('cart_items')
       .delete()
       .eq('id', cartItemId);
@@ -148,9 +141,8 @@ export class CartRepository {
   /**
    * Clear all items in a specific active cart.
    */
-  async clearCart(cartId: string, token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { error } = await supabaseClient
+  async clearCart(cartId: string, _token?: string) {
+    const { error } = await supabaseAdmin
       .from('cart_items')
       .delete()
       .eq('cart_id', cartId);
@@ -161,9 +153,8 @@ export class CartRepository {
   /**
    * Update cart status (e.g., converted upon order checkout).
    */
-  async updateCartStatus(cartId: string, status: 'active' | 'converted' | 'abandoned', token: string) {
-    const supabaseClient = getSupabaseForUser(token);
-    const { data, error } = await supabaseClient
+  async updateCartStatus(cartId: string, status: 'active' | 'converted' | 'abandoned', _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('carts')
       .update({ status })
       .eq('id', cartId)
