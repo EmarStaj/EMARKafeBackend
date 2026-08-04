@@ -21,5 +21,6 @@ router.use(requireAuth);
 
 router.get('/me', controller.getProfile);
 router.put('/me', validate(updateProfileSchema), controller.updateProfile);
+router.delete('/cache', controller.clearCache);
 
 export default router;

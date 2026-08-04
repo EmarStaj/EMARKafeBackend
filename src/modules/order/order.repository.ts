@@ -1,4 +1,4 @@
-import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface OrderInput {
   user_id: string;
@@ -48,9 +48,8 @@ export class OrderRepository {
   /**
    * Fetch all orders for a specific user using user-scoped client if token provided.
    */
-  async getOrders(userId: string, token?: string) {
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
-    const { data, error } = await client
+  async getOrders(userId: string, _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
         id,
@@ -84,9 +83,8 @@ export class OrderRepository {
   /**
    * Fetch detailed view of a single order using user-scoped client if token provided.
    */
-  async getOrderById(orderId: string, token?: string) {
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
-    const { data, error } = await client
+  async getOrderById(orderId: string, _token?: string) {
+    const { data, error } = await supabaseAdmin
       .from('orders')
       .select(`
         id,
