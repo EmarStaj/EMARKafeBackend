@@ -32,7 +32,7 @@ export class AuthController {
   signOut = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const token = req.token as string;
-      await this.authService.signOut(token);
+      await this.authService.signOut(token, req.user?.id);
       sendSuccess(res, null, 'Logged out successfully.');
     } catch (error) {
       next(error);

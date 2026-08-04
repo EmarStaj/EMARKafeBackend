@@ -1,5 +1,6 @@
 import { supabase } from '../../config/supabase';
 import { AppError } from '../../utils/app-error';
+import { profileCache } from '../../config/profile-cache';
 
 export class AuthService {
   /**
@@ -45,7 +46,10 @@ export class AuthService {
    * Sign out the user. Since Supabase auth is client-bound,
    * we use the admin client or standard client to sign out.
    */
-  async signOut(accessToken: string) {
+  async signOut(accessToken: string, userId?: string) {
+    if (userId) {
+      profileCache.invalidate(userId);
+    }
     const { error } = await supabase.auth.admin.signOut(accessToken);
     if (error) {
       throw new AppError(error.message, 400);

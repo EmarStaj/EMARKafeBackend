@@ -5,7 +5,8 @@
  */
 
 // Builder pattern mock — mirrors Supabase's fluent query builder
-const buildQueryMock = (returnValue: unknown = null) => {
+const defaultReturnValue = { id: 'mock-user-id', role: 'customer', created_at: '2026-08-04T00:00:00Z' };
+const buildQueryMock = (returnValue: unknown = defaultReturnValue) => {
   const builder: any = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),

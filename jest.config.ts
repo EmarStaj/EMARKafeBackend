@@ -6,11 +6,9 @@ const config: Config = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleNameMapper: {
-    // Auto-mock Supabase clients for all tests
-    '^../../config/supabase$': '<rootDir>/src/__mocks__/supabase.ts',
-    '^../../../config/supabase$': '<rootDir>/src/__mocks__/supabase.ts',
-    '^../../config/logger$': '<rootDir>/src/__mocks__/logger.ts',
-    '^../../../config/logger$': '<rootDir>/src/__mocks__/logger.ts',
+    // Auto-mock Supabase clients and logger for all tests regardless of directory depth
+    '(.*)/config/supabase$': '<rootDir>/src/__mocks__/supabase.ts',
+    '(.*)/config/logger$': '<rootDir>/src/__mocks__/logger.ts',
   },
   collectCoverageFrom: [
     'src/**/*.ts',
