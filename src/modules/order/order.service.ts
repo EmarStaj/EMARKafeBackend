@@ -178,7 +178,7 @@ export class OrderService {
 
       // 5. Simulate push notification triggers
       if (status === 'ready') {
-        console.log(`[Push Notification Simulator] Sent: 'Siparişiniz Hazır!' to user ${order.user_id}`);
+        logger.info(`[Push Notification Simulator] Sent: 'Siparişiniz Hazır!' to user ${order.user_id}`);
       }
 
       return updatedOrder;

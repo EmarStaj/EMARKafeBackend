@@ -1,5 +1,6 @@
 import { LoyaltyRepository } from './loyalty.repository';
 import { AppError } from '../../utils/app-error';
+import { logger } from '../../config/logger';
 
 export class LoyaltyService {
   private loyaltyRepository: LoyaltyRepository;
@@ -61,8 +62,8 @@ export class LoyaltyService {
         currentStamps: newCount,
         rewardsEarned
       };
-    } catch (error: any) {
-      console.error('Error adding stamps:', error);
+    } catch (error: unknown) {
+      logger.error('Error adding stamps:', error);
       // We log the error but don't crash checkout if loyalty processing fails
       return { stampsAdded: 0, currentStamps: 0, rewardsEarned: 0 };
     }
