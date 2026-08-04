@@ -1,10 +1,10 @@
-import { supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
 
 export interface OrderInput {
   user_id: string;
   branch_id: string;
   total_price: number;
-  status?: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 }
 
 export interface OrderItemInput {
@@ -14,22 +14,17 @@ export interface OrderItemInput {
   selected_options?: any[];
   unit_price: number;
   product_name: string;
-  category_name?: string;
+  category_name: string;
 }
 
 export class OrderRepository {
   /**
-   * Create an order record. Bypasses RLS.
+   * Create a new order header in public.orders.
    */
   async createOrder(order: OrderInput, _token?: string) {
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .insert({
-        user_id: order.user_id,
-        branch_id: order.branch_id,
-        total_price: order.total_price,
-        status: order.status || 'created'
-      })
+      .insert(order)
       .select()
       .single();
 
@@ -38,20 +33,12 @@ export class OrderRepository {
   }
 
   /**
-   * Insert items for an order. Bypasses RLS.
+   * Insert multiple items into public.order_items.
    */
-  async createOrderItems(orderItems: OrderItemInput[], _token?: string) {
+  async createOrderItems(items: OrderItemInput[], _token?: string) {
     const { data, error } = await supabaseAdmin
       .from('order_items')
-      .insert(orderItems.map(item => ({
-        order_id: item.order_id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        selected_options: item.selected_options || [],
-        unit_price: item.unit_price,
-        product_name: item.product_name,
-        category_name: item.category_name || ''
-      })))
+      .insert(items)
       .select();
 
     if (error) throw error;
@@ -59,10 +46,11 @@ export class OrderRepository {
   }
 
   /**
-   * Fetch all orders for a specific user. Bypasses RLS.
+   * Fetch all orders for a specific user using user-scoped client if token provided.
    */
-  async getOrders(userId: string, _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async getOrders(userId: string, token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('orders')
       .select(`
         id,
@@ -94,10 +82,11 @@ export class OrderRepository {
   }
 
   /**
-   * Fetch detailed view of a single order. Bypasses RLS.
+   * Fetch detailed view of a single order using user-scoped client if token provided.
    */
-  async getOrderById(orderId: string, _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async getOrderById(orderId: string, token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('orders')
       .select(`
         id,
