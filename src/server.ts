@@ -1,4 +1,4 @@
-import app from './app';
+import app, { logger } from './app';
 
 const PORT = process.env.PORT || 5001;
 
@@ -8,8 +8,8 @@ const server = app.listen(PORT, () => {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err: any) => {
-  console.error('💥 Unhandled Rejection! Shutting down server...');
-  console.error(err);
+  logger.error('Unhandled Rejection! Shutting down server...');
+  logger.error(err);
   server.close(() => {
     process.exit(1);
   });
@@ -17,7 +17,7 @@ process.on('unhandledRejection', (err: any) => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: any) => {
-  console.error('💥 Uncaught Exception! Shutting down server...');
-  console.error(err);
+  logger.error('Uncaught Exception! Shutting down server...');
+  logger.error(err);
   process.exit(1);
 });

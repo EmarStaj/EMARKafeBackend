@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthController } from './auth.controller';
 import { validate } from '../../middlewares/validate.middleware';
 import { requireAuth } from '../../middlewares/auth.middleware';
+import { authRateLimiter } from '../../middlewares/rate-limit.middleware';
 
 const router = Router();
 const controller = new AuthController();
@@ -23,8 +24,8 @@ const loginSchema = z.object({
 });
 
 // Endpoints
-router.post('/register', validate(registerSchema), controller.signUp);
-router.post('/login', validate(loginSchema), controller.signIn);
+router.post('/register', authRateLimiter, validate(registerSchema), controller.signUp);
+router.post('/login', authRateLimiter, validate(loginSchema), controller.signIn);
 router.post('/logout', requireAuth, controller.signOut);
 router.get('/me', requireAuth, controller.getMe);
 

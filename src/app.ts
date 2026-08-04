@@ -6,8 +6,12 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './config/swagger.json';
 
+// Import Config
+import { logger } from './config/logger';
+
 // Import Middlewares
 import { errorMiddleware } from './middlewares/error.middleware';
+import { globalRateLimiter } from './middlewares/rate-limit.middleware';
 import { AppError } from './utils/app-error';
 
 // Import Route modules
@@ -27,20 +31,48 @@ import settingsRoutes from './modules/settings/settings.routes';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const app = express();
 
 // Global Middlewares
 app.use(helmet({
   contentSecurityPolicy: false
 }));
-app.use(cors());
-app.use(morgan('dev'));
+
+// CORS — restrict to allowed origins in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : [];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (!isProduction) return callback(null, true); // Dev: allow all
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
+  },
+  credentials: true,
+}));
+
+// HTTP request logging — structured JSON in prod, colorized in dev
+app.use(morgan(isProduction ? 'combined' : 'dev'));
+
+// Global rate limiter — 100 requests per 15 minutes per IP
+app.use(globalRateLimiter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check Endpoint
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date() });
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date(),
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
+  });
 });
 
 // Swagger API Documentation UI
@@ -69,4 +101,5 @@ app.all('*', (req: Request, _res: Response, next: NextFunction) => {
 // Global Error Handler
 app.use(errorMiddleware);
 
+export { logger };
 export default app;

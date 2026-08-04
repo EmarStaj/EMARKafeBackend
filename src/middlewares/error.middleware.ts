@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error';
 import { sendError } from '../utils/response';
 import { ZodError } from 'zod';
+import { logger } from '../config/logger';
 
 export const errorMiddleware = (
   err: Error,
@@ -16,7 +17,7 @@ export const errorMiddleware = (
 
   // Log non-operational errors for debugging
   if (!(err instanceof AppError)) {
-    console.error('💥 Unexpected Error:', err);
+    logger.error('Unexpected Error:', { message: err.message, stack: err.stack });
   }
 
   // Handle Zod Validation Errors
