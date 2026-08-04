@@ -30,8 +30,10 @@ export class FavoritesController {
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
       const { product_id } = req.body;
-      const data = await this.favoritesService.addFavorite(userId, product_id, token);
-      sendSuccess(res, data, 'Added to favorites successfully.', 201);
+      const { data, isNew } = await this.favoritesService.addFavorite(userId, product_id, token);
+
+      // 201 Created for new favorites, 200 OK for idempotent (already exists) case
+      sendSuccess(res, data, isNew ? 'Added to favorites successfully.' : 'Already in favorites.', isNew ? 201 : 200);
     } catch (error) {
       next(error);
     }

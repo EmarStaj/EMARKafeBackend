@@ -1,6 +1,6 @@
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../menu/menu.repository';
-import { AppError } from '../../utils/app-error';
+import { AppError, rethrowAsAppError } from '../../utils/app-error';
 
 export class CartService {
   private cartRepository: CartRepository;
@@ -17,8 +17,8 @@ export class CartService {
   async getCart(userId: string, token: string) {
     try {
       return await this.cartRepository.getCart(userId, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to retrieve cart.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to retrieve cart.');
     }
   }
 
@@ -49,7 +49,7 @@ export class CartService {
     productId: string,
     quantity: number,
     selectedOptions: any[] = [],
-    token: string
+    _token: string
   ) {
     if (quantity <= 0) {
       throw new AppError('Quantity must be greater than zero.', 400);
@@ -62,8 +62,7 @@ export class CartService {
         throw new AppError('Product is not available or inactive.', 400);
       }
 
-      // Calculate unit price (in a production app, we would sum up product.base_price + option prices)
-      // Here we will base it on product.base_price, and add any price_delta from options if present
+      // Calculate unit price (base_price + any price_delta from selected options)
       let unitPrice = Number(product.base_price);
       if (Array.isArray(selectedOptions)) {
         selectedOptions.forEach(opt => {
@@ -74,20 +73,20 @@ export class CartService {
       }
 
       // 2. Fetch or create active cart for the user
-      const activeCart = await this.cartRepository.getOrCreateActiveCart(userId, token);
+      const activeCart = await this.cartRepository.getOrCreateActiveCart(userId);
 
       // 3. Retrieve existing cart items for this product
-      const existingItems = await this.cartRepository.getCartItemsByProduct(activeCart.id, productId, token);
+      const existingItems = await this.cartRepository.getCartItemsByProduct(activeCart.id, productId);
 
       // 4. Look for an item with identical options
-      const duplicateItem = existingItems.find(item => 
+      const duplicateItem = existingItems.find(item =>
         this.optionsMatch(item.selected_options, selectedOptions)
       );
 
       if (duplicateItem) {
         // Update quantity
         const newQuantity = duplicateItem.quantity + quantity;
-        return await this.cartRepository.updateCartItem(duplicateItem.id, newQuantity, token);
+        return await this.cartRepository.updateCartItem(duplicateItem.id, newQuantity);
       }
 
       // 5. Add new cart item
@@ -97,39 +96,39 @@ export class CartService {
         quantity,
         selected_options: selectedOptions,
         unit_price: unitPrice
-      }, token);
+      });
 
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to add item to cart.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to add item to cart.');
     }
   }
 
-  async updateCartItem(cartItemId: string, quantity: number, token: string) {
+  async updateCartItem(cartItemId: string, quantity: number, _token: string) {
     if (quantity <= 0) {
-      return await this.removeFromCart(cartItemId, token);
+      return await this.removeFromCart(cartItemId);
     }
 
     try {
-      return await this.cartRepository.updateCartItem(cartItemId, quantity, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to update cart item.', 400);
-    }
-  }
-
-  async removeFromCart(cartItemId: string, token: string) {
-    try {
-      await this.cartRepository.removeFromCart(cartItemId, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to remove item from cart.', 400);
+      return await this.cartRepository.updateCartItem(cartItemId, quantity);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to update cart item.');
     }
   }
 
-  async clearCart(userId: string, token: string) {
+  async removeFromCart(cartItemId: string, _token?: string) {
     try {
-      const activeCart = await this.cartRepository.getOrCreateActiveCart(userId, token);
-      await this.cartRepository.clearCart(activeCart.id, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to clear cart.', 400);
+      await this.cartRepository.removeFromCart(cartItemId);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to remove item from cart.');
+    }
+  }
+
+  async clearCart(userId: string, _token: string) {
+    try {
+      const activeCart = await this.cartRepository.getOrCreateActiveCart(userId);
+      await this.cartRepository.clearCart(activeCart.id);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to clear cart.');
     }
   }
 }

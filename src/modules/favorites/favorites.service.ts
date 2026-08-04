@@ -20,9 +20,10 @@ export class FavoritesService {
     try {
       const existing = await this.favoritesRepository.findFavorite(userId, productId, token);
       if (existing) {
-        return existing;
+        return { data: existing, isNew: false };
       }
-      return await this.favoritesRepository.addFavorite(userId, productId, token);
+      const data = await this.favoritesRepository.addFavorite(userId, productId, token);
+      return { data, isNew: true };
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to add item to favorites.', 400);
     }

@@ -2,8 +2,9 @@ import { OrderRepository, OrderItemInput } from './order.repository';
 import { CartRepository } from '../cart/cart.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { LoyaltyService } from '../loyalty/loyalty.service';
-import { AppError } from '../../utils/app-error';
+import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import { supabaseAdmin } from '../../config/supabase';
+import { UserProfile } from '../../types';
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -99,30 +100,31 @@ export class OrderService {
       await this.orderRepository.createOrderItems(orderItems, token);
 
       // 5. Update the cart status to 'converted' (it's checked out, no longer active)
-      await this.cartRepository.updateCartStatus(cart.id, 'converted', token);
+      await this.cartRepository.updateCartStatus(cart.id, 'converted');
 
       // 6. Return the fully populated order receipt
       return await this.orderRepository.getOrderById(order.id, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to place order.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to place order.');
     }
   }
 
   async getOrders(userId: string, token: string) {
     try {
       return await this.orderRepository.getOrders(userId, token);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to retrieve order history.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to retrieve order history.');
     }
   }
 
   async getOrderById(orderId: string, token: string) {
     try {
       return await this.orderRepository.getOrderById(orderId, token);
-    } catch (error: any) {
-      const isNotFound = error.code === 'PGRST116';
+    } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
+      const isNotFound = (error as any).code === 'PGRST116';
       throw new AppError(
-        isNotFound ? 'Order not found.' : error.message,
+        isNotFound ? 'Order not found.' : (error instanceof Error ? error.message : 'Failed to retrieve order.'),
         isNotFound ? 404 : 400
       );
     }
@@ -134,8 +136,8 @@ export class OrderService {
   async getBranchOrders(branchId: string) {
     try {
       return await this.orderRepository.getBranchOrders(branchId);
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to retrieve branch orders.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to retrieve branch orders.');
     }
   }
 
@@ -143,7 +145,7 @@ export class OrderService {
    * Update order status by a barista or branch manager.
    * If status transitions to 'completed', awards stamps for loyalty eligible products.
    */
-  async updateOrderStatus(orderId: string, status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled', userProfile: any) {
+  async updateOrderStatus(orderId: string, status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled', userProfile: UserProfile) {
     try {
       // 1. Fetch order details (bypassing user RLS using admin)
       const order = await this.orderRepository.getOrderByIdAdmin(orderId);
@@ -182,8 +184,8 @@ export class OrderService {
       }
 
       return updatedOrder;
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to update order status.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to update order status.');
     }
   }
 
@@ -204,8 +206,8 @@ export class OrderService {
       }
 
       return await this.orderRepository.updateOrderStatus(orderId, 'cancelled');
-    } catch (error: any) {
-      throw new AppError(error.message || 'Failed to cancel order.', 400);
+    } catch (error: unknown) {
+      rethrowAsAppError(error, 'Failed to cancel order.');
     }
   }
 }

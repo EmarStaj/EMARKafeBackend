@@ -11,7 +11,7 @@ const controller = new CartController();
 const addToCartSchema = z.object({
   body: z.object({
     product_id: z.string({ required_error: 'Product ID is required' }).uuid('Invalid Product UUID format'),
-    quantity: z.number({ required_error: 'Quantity is required' }).int().positive('Quantity must be positive'),
+    quantity: z.number({ required_error: 'Quantity is required' }).int().positive('Quantity must be positive').max(50, 'Quantity cannot exceed 50 per item'),
     selected_options: z.array(z.any()).optional(),
   }),
 });

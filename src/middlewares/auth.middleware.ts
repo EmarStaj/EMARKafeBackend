@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase, supabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/app-error';
+import { UserProfile } from '../types';
 
 /**
  * Middleware that requires a valid Supabase JWT Bearer token.
@@ -55,7 +56,7 @@ export const requireAuth = async (
     // Attach the user, token, and profile to the request context
     req.user = user;
     req.token = token;
-    req.profile = profile as any;
+    req.profile = profile as UserProfile;
 
     next();
   } catch (error) {
