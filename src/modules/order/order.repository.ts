@@ -150,7 +150,12 @@ export class OrderRepository {
           selected_options,
           unit_price,
           product_name,
-          category_name
+          category_name,
+          products (
+            id,
+            category_id,
+            is_loyalty_eligible
+          )
         )
       `)
       .eq('id', orderId)

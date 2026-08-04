@@ -8,6 +8,7 @@ import swaggerDocument from './config/swagger.json';
 
 // Import Config
 import { logger } from './config/logger';
+import { supabaseAdmin } from './config/supabase';
 
 // Import Middlewares
 import { errorMiddleware } from './middlewares/error.middleware';
@@ -65,13 +66,24 @@ app.use(globalRateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check Endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
+// Health Check Endpoint — includes DB connectivity test
+app.get('/health', async (_req: Request, res: Response) => {
+  let dbStatus = 'ok';
+  try {
+    // Lightweight DB ping: fetch a single row from a small table
+    const { error } = await supabaseAdmin.from('app_settings').select('key').limit(1);
+    if (error) dbStatus = 'degraded';
+  } catch {
+    dbStatus = 'unreachable';
+  }
+
+  const httpStatus = dbStatus === 'ok' ? 200 : 503;
+  res.status(httpStatus).json({
+    status: dbStatus === 'ok' ? 'OK' : 'DEGRADED',
     timestamp: new Date(),
     environment: process.env.NODE_ENV || 'development',
     version: process.env.npm_package_version || '1.0.0',
+    services: { database: dbStatus },
   });
 });
 

@@ -136,8 +136,8 @@ Backend üzerinde gerçekleştirilen otomatik E2E test akışı ile aşağıdaki
 
 **Sonuç:** Tüm E2E API doğrulamaları başarıyla tamamlandı.
 
-### Not Edilen Küçük Bulgu
-Favorilere tekrar ekleme isteğinde (idempotent senaryo) API `201 Created` döndürüyor; işlevsel olarak mükerrer kayıt oluşmasa da HTTP semantiği açısından "zaten var" durumunda `200 OK` dönmesi daha doğru olur. Düzeltilmesi önerilir.
+### Not Edilen Küçük Bulgu — ✅ Çözüldü
+Favorilere tekrar ekleme isteğinde (idempotent senaryo) API `201 Created` dönüyordu; işlevsel olarak mükerrer kayıt oluşmasa da HTTP semantiği açısından "zaten var" durumunda `200 OK` dönmesi daha doğruydu. **Bu davranış düzeltildi:** Yeni kayıt oluşturmada `201 Created`, idempotent tekrar eklemede `200 OK` döndürülmektedir.
 
 ---
 

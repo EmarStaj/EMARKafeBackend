@@ -1,21 +1,19 @@
 import { OrderRepository, OrderItemInput } from './order.repository';
 import { CartRepository } from '../cart/cart.repository';
-import { MenuRepository } from '../menu/menu.repository';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import { supabaseAdmin } from '../../config/supabase';
 import { UserProfile } from '../../types';
+import { logger } from '../../config/logger';
 
 export class OrderService {
   private orderRepository: OrderRepository;
   private cartRepository: CartRepository;
-  private menuRepository: MenuRepository;
   private loyaltyService: LoyaltyService;
 
   constructor() {
     this.orderRepository = new OrderRepository();
     this.cartRepository = new CartRepository();
-    this.menuRepository = new MenuRepository();
     this.loyaltyService = new LoyaltyService();
   }
 
@@ -163,17 +161,17 @@ export class OrderService {
       const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status, completedAt);
 
       // 4. If status is completed, process loyalty points
+      // NOTE: product loyalty data is already joined in getOrderByIdAdmin — no N+1 queries.
       if (status === 'completed' && order.order_items) {
         for (const item of order.order_items) {
           try {
-            // Find product category and eligibility
-            const product = await this.menuRepository.getItemById(item.product_id);
+            // Use the pre-joined product data instead of fetching each product separately
+            const product = (item as any).products;
             if (product && product.is_loyalty_eligible) {
-              // Award stamps to the user
               await this.loyaltyService.addStampsForProduct(order.user_id, product.category_id, item.quantity);
             }
           } catch (e) {
-            console.error(`Failed to process loyalty stamps for order item ${item.id}:`, e);
+            logger.error(`Failed to process loyalty stamps for order item ${item.id}:`, e);
           }
         }
       }
