@@ -1,11 +1,11 @@
-import { supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
 
 export class FavoritesRepository {
   /**
    * Fetch user's bookmarked products, joining with product details.
    */
-  async getFavorites(_token: string, userId?: string) {
-    let query = supabaseAdmin
+  async getFavorites(token: string, userId?: string) {
+    let query = getSupabaseForUser(token)
       .from('favorites')
       .select(`
         id,
@@ -34,8 +34,8 @@ export class FavoritesRepository {
   /**
    * Check if user already bookmarked a product.
    */
-  async findFavorite(userId: string, productId: string, _token: string) {
-    const { data, error } = await supabaseAdmin
+  async findFavorite(userId: string, productId: string, token: string) {
+    const { data, error } = await getSupabaseForUser(token)
       .from('favorites')
       .select('*')
       .eq('user_id', userId)

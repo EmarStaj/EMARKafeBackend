@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../config/supabase';
+import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
 
 export interface OrderInput {
   user_id: string;
@@ -8,7 +8,7 @@ export interface OrderInput {
 }
 
 export interface OrderItemInput {
-  order_id: string;
+  order_id?: string;
   product_id: string;
   quantity: number;
   selected_options?: any[];
@@ -21,8 +21,9 @@ export class OrderRepository {
   /**
    * Create a new order header in public.orders.
    */
-  async createOrder(order: OrderInput, _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async createOrder(order: OrderInput, token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('orders')
       .insert(order)
       .select()
@@ -35,8 +36,9 @@ export class OrderRepository {
   /**
    * Insert multiple items into public.order_items.
    */
-  async createOrderItems(items: OrderItemInput[], _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async createOrderItems(items: OrderItemInput[], token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('order_items')
       .insert(items)
       .select();
@@ -48,8 +50,9 @@ export class OrderRepository {
   /**
    * Fetch all orders for a specific user using user-scoped client if token provided.
    */
-  async getOrders(userId: string, _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async getOrders(userId: string, token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('orders')
       .select(`
         id,
@@ -83,8 +86,9 @@ export class OrderRepository {
   /**
    * Fetch detailed view of a single order using user-scoped client if token provided.
    */
-  async getOrderById(orderId: string, _token?: string) {
-    const { data, error } = await supabaseAdmin
+  async getOrderById(orderId: string, token?: string) {
+    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const { data, error } = await client
       .from('orders')
       .select(`
         id,
