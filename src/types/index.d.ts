@@ -7,6 +7,7 @@ export interface UserProfile {
   avatar_url?: string;
   role: 'customer' | 'barista' | 'branch_manager' | 'admin';
   branch_id?: string;
+  balance: number;
   created_at: string;
 }
 

@@ -44,10 +44,10 @@ export class CartRepository {
   /**
    * Fetch user's active cart and its items, joined with products.
    */
-  async getCart(userId: string, token: string) {
+  async getCart(userId: string, token?: string, isAdmin: boolean = false) {
     const activeCart = await this.getOrCreateActiveCart(userId);
 
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+    const client = isAdmin ? supabaseAdmin : (token ? getSupabaseForUser(token) : supabaseAdmin);
     const { data: items, error } = await client
       .from('cart_items')
       .select(`

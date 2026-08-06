@@ -15,6 +15,12 @@ const placeOrderSchema = z.object({
   }),
 });
 
+const scanQrSchema = z.object({
+  body: z.object({
+    qr_token: z.string({ required_error: 'qr_token is required' })
+  })
+});
+
 const orderIdSchema = z.object({
   params: z.object({
     id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid Order UUID format'),
@@ -40,6 +46,13 @@ router.get(
   '/branch',
   requireRole(['barista', 'branch_manager']),
   controller.getBranchOrders
+);
+
+router.post(
+  '/scan-qr',
+  requireRole(['barista', 'branch_manager']),
+  validate(scanQrSchema),
+  controller.scanQRAndCheckout
 );
 
 router.put(

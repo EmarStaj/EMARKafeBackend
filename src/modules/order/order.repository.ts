@@ -21,8 +21,8 @@ export class OrderRepository {
   /**
    * Create a new order header in public.orders.
    */
-  async createOrder(order: OrderInput, token?: string) {
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+  async createOrder(order: OrderInput, token?: string, isAdmin: boolean = false) {
+    const client = isAdmin ? supabaseAdmin : (token ? getSupabaseForUser(token) : supabaseAdmin);
     const { data, error } = await client
       .from('orders')
       .insert(order)
@@ -36,8 +36,8 @@ export class OrderRepository {
   /**
    * Insert multiple items into public.order_items.
    */
-  async createOrderItems(items: OrderItemInput[], token?: string) {
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+  async createOrderItems(items: OrderItemInput[], token?: string, isAdmin: boolean = false) {
+    const client = isAdmin ? supabaseAdmin : (token ? getSupabaseForUser(token) : supabaseAdmin);
     const { data, error } = await client
       .from('order_items')
       .insert(items)
@@ -86,8 +86,8 @@ export class OrderRepository {
   /**
    * Fetch detailed view of a single order using user-scoped client if token provided.
    */
-  async getOrderById(orderId: string, token?: string) {
-    const client = token ? getSupabaseForUser(token) : supabaseAdmin;
+  async getOrderById(orderId: string, token?: string, isAdmin: boolean = false) {
+    const client = isAdmin ? supabaseAdmin : (token ? getSupabaseForUser(token) : supabaseAdmin);
     const { data, error } = await client
       .from('orders')
       .select(`

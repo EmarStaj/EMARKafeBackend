@@ -2,9 +2,10 @@ import { ProfileCache } from '../../config/profile-cache';
 import { UserProfile } from '../../types';
 
 const mockProfile: UserProfile = {
-  id: 'user-id-123',
+  id: 'user1',
   role: 'customer',
-  created_at: new Date().toISOString(),
+  balance: 0,
+  created_at: '2023-01-01T00:00:00Z',
 };
 
 describe('ProfileCache', () => {

@@ -28,6 +28,7 @@ import optionRoutes from './modules/option/option.routes';
 import ratingRoutes from './modules/rating/rating.routes';
 import loyaltyRoutes from './modules/loyalty/loyalty.routes';
 import deviceTokenRoutes from './modules/device-token/device-token.routes';
+import walletRoutes from './modules/wallet/wallet.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 
 dotenv.config();
@@ -106,6 +107,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api', ratingRoutes); // Mounts /products/:productId/ratings under /api
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
+app.use('/api/wallet', walletRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // Fallback for undefined routes (404)

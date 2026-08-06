@@ -7,8 +7,9 @@ import { UserProfile } from '../../types';
 const MockedSupabaseAdmin = supabaseAdmin as jest.Mocked<typeof supabaseAdmin>;
 
 const mockProfile: UserProfile = {
-  id: 'mock-user-id',
+  id: 'user123',
   role: 'customer',
+  balance: 0,
   created_at: new Date().toISOString(),
 };
 

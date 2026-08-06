@@ -32,7 +32,8 @@ const makeOrder = (overrides = {}) => ({
 const makeProfile = (overrides: Partial<UserProfile> = {}): UserProfile => ({
   id: 'admin-user',
   role: 'admin',
-  created_at: new Date().toISOString(),
+  balance: 0,
+  created_at: '2023-01-01T00:00:00Z',
   ...overrides,
 });
 

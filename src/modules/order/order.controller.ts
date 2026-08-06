@@ -10,15 +10,40 @@ export class OrderController {
     this.orderService = new OrderService();
   }
 
-  placeOrder = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  placeOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.user?.id;
-      const token = req.token;
-      if (!userId || !token) throw new AppError('Unauthorized', 401);
-
+      const userId = req.user!.id;
+      const token = req.token!;
       const { branch_id } = req.body;
+
       const order = await this.orderService.placeOrder(userId, branch_id, token);
-      sendSuccess(res, order, 'Order placed successfully.', 201);
+
+      res.status(201).json({
+        status: 'success',
+        data: order
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  scanQRAndCheckout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const baristaToken = req.token!;
+      const baristaBranchId = req.profile!.branch_id;
+      const { qr_token } = req.body;
+
+      if (!baristaBranchId) {
+        throw new AppError('Barista is not assigned to any branch.', 400);
+      }
+
+      const order = await this.orderService.scanQRAndCheckout(qr_token, baristaBranchId, baristaToken);
+
+      res.status(201).json({
+        status: 'success',
+        message: 'QR successfully scanned, payment processed, and order created.',
+        data: order
+      });
     } catch (error) {
       next(error);
     }
