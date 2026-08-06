@@ -13,64 +13,64 @@
   ],
   "tags": [
     {
-      "name": "System",
-      "description": "System status and health check endpoints"
-    },
-    {
       "name": "Auth",
       "description": "User registration, authentication and session endpoints"
-    },
-    {
-      "name": "Profile",
-      "description": "User profile viewing and editing endpoints"
-    },
-    {
-      "name": "Menu",
-      "description": "Cafe products retrieval and management endpoints"
-    },
-    {
-      "name": "Category",
-      "description": "Cafe category management endpoints (Admin)"
     },
     {
       "name": "Branch",
       "description": "Branch locations and product availability/stock management endpoints"
     },
     {
-      "name": "Option",
-      "description": "Customizable product option groups and values endpoints"
-    },
-    {
       "name": "Cart",
       "description": "User shopping cart management endpoints"
     },
     {
-      "name": "Order",
-      "description": "Checkout, order history, cancel, and barista status management endpoints"
-    },
-    {
-      "name": "Favorites",
-      "description": "User product bookmarked/favorites endpoints"
-    },
-    {
-      "name": "Rating",
-      "description": "Product rating and review score endpoints"
-    },
-    {
-      "name": "Loyalty",
-      "description": "Customer loyalty stamps and rewards tracking endpoints"
+      "name": "Category",
+      "description": "Cafe category management endpoints (Admin)"
     },
     {
       "name": "Device Token",
       "description": "Register user FCM push notification tokens"
     },
     {
+      "name": "Favorites",
+      "description": "User product bookmarked/favorites endpoints"
+    },
+    {
+      "name": "Loyalty",
+      "description": "Customer loyalty stamps and rewards tracking endpoints"
+    },
+    {
+      "name": "Menu",
+      "description": "Cafe products retrieval and management endpoints"
+    },
+    {
+      "name": "Option",
+      "description": "Customizable product option groups and values endpoints"
+    },
+    {
+      "name": "Order",
+      "description": "Checkout, order history, cancel, and barista status management endpoints"
+    },
+    {
+      "name": "Profile",
+      "description": "User profile viewing and editing endpoints"
+    },
+    {
+      "name": "Rating",
+      "description": "Product rating and review score endpoints"
+    },
+    {
       "name": "Settings",
       "description": "System-wide global app configuration endpoints"
     },
     {
+      "name": "System",
+      "description": "System status and health check endpoints"
+    },
+    {
       "name": "Wallet",
-      "description": "Cüzdan ve QR ödeme işlemleri"
+      "description": "Wallet and QR payment operations"
     }
   ],
   "components": {
@@ -1681,8 +1681,8 @@
         "tags": [
           "Wallet"
         ],
-        "summary": "Bakiye ve İşlem Geçmişi Getir",
-        "description": "Kullanıcının güncel bakiyesini ve işlemlerini getirir.",
+        "summary": "Get Balance and Transaction History",
+        "description": "Retrieves the user current balance and recent transactions.",
         "security": [
           {
             "bearerAuth": []
@@ -1690,7 +1690,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Başarılı"
+            "description": "Success"
           }
         }
       }
@@ -1700,8 +1700,8 @@
         "tags": [
           "Wallet"
         ],
-        "summary": "Bakiye Yükle",
-        "description": "Kullanıcının hesabına bakiye yükler (Mock).",
+        "summary": "Topup Balance",
+        "description": "Adds the specified amount to the user wallet balance (Mock).",
         "security": [
           {
             "bearerAuth": []
@@ -1725,7 +1725,7 @@
         },
         "responses": {
           "200": {
-            "description": "Başarılı"
+            "description": "Success"
           }
         }
       }
@@ -1735,8 +1735,8 @@
         "tags": [
           "Wallet"
         ],
-        "summary": "Ödeme QR Token Üret",
-        "description": "Kasadaki ödeme ekranı için 10 dakikalık şifreli QR bileti üretir.",
+        "summary": "Generate Payment QR Token",
+        "description": "Generates a secure 10-minute JWT QR token for checkout at the register.",
         "security": [
           {
             "bearerAuth": []
@@ -1744,7 +1744,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Başarılı"
+            "description": "Success"
           }
         }
       }
@@ -1754,8 +1754,8 @@
         "tags": [
           "Orders"
         ],
-        "summary": "Kasiyer QR Okutma",
-        "description": "Müşterinin okuttuğu QR kodu doğrular, bakiyeyi düşer ve siparişi onaylar.",
+        "summary": "Barista QR Scan",
+        "description": "Scans the customer QR code, deducts the balance, and confirms the order.",
         "security": [
           {
             "bearerAuth": []
@@ -1778,10 +1778,10 @@
         },
         "responses": {
           "201": {
-            "description": "Başarılı"
+            "description": "Success"
           },
           "400": {
-            "description": "Yetersiz bakiye veya geçersiz QR"
+            "description": "Insufficient balance or invalid QR"
           }
         }
       }
