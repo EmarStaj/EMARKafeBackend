@@ -3,7 +3,7 @@ import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import jwt from 'jsonwebtoken';
 
 const QR_SECRET = process.env.JWT_SECRET || 'super_secret_qr_key_change_in_prod';
-const QR_EXPIRES_IN = '5m'; // QR code is valid for 5 minutes
+const QR_EXPIRES_IN = '10m'; // QR code is valid for 10 minutes
 
 export class WalletService {
   private walletRepository: WalletRepository;
@@ -43,7 +43,7 @@ export class WalletService {
       };
 
       const qrToken = jwt.sign(payload, QR_SECRET, { expiresIn: QR_EXPIRES_IN });
-      return { qr_token: qrToken, expires_in_minutes: 5 };
+      return { qr_token: qrToken, expires_in_minutes: 10 };
     } catch (error) {
       throw new AppError('Failed to generate QR token.', 500);
     }
