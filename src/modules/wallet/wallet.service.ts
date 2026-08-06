@@ -1,4 +1,5 @@
 import { WalletRepository } from './wallet.repository';
+import { CartRepository } from '../cart/cart.repository';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import jwt from 'jsonwebtoken';
 
@@ -7,9 +8,11 @@ const QR_EXPIRES_IN = '10m'; // QR code is valid for 10 minutes
 
 export class WalletService {
   private walletRepository: WalletRepository;
+  private cartRepository: CartRepository;
 
   constructor() {
     this.walletRepository = new WalletRepository();
+    this.cartRepository = new CartRepository();
   }
 
   async getBalanceAndTransactions(userId: string, token: string) {
@@ -35,8 +38,28 @@ export class WalletService {
    * Generates a signed JWT token for the user to display as a QR code.
    * The barista will scan this to process checkout.
    */
-  generateQrToken(userId: string) {
+  async generateQrToken(userId: string, token: string) {
     try {
+      // 1. Fetch current balance
+      const { balance } = await this.walletRepository.getBalanceAndTransactions(userId, token);
+
+      // 2. Fetch cart and calculate total
+      const cartData = await this.cartRepository.getCart(userId, token);
+      if (!cartData.items || cartData.items.length === 0) {
+        throw new AppError('Cannot generate QR. Your cart is empty.', 400);
+      }
+
+      let cartTotal = 0;
+      for (const item of cartData.items) {
+        cartTotal += Number(item.unit_price) * item.quantity;
+      }
+
+      // 3. Verify balance is sufficient
+      if (balance < cartTotal) {
+        throw new AppError(`Insufficient balance. Your cart total is ${cartTotal} TL, but your balance is ${balance} TL.`, 400);
+      }
+
+      // 4. Generate Token
       const payload = {
         userId,
         action: 'checkout'
@@ -45,7 +68,7 @@ export class WalletService {
       const qrToken = jwt.sign(payload, QR_SECRET, { expiresIn: QR_EXPIRES_IN });
       return { qr_token: qrToken, expires_in_minutes: 10 };
     } catch (error) {
-      throw new AppError('Failed to generate QR token.', 500);
+      rethrowAsAppError(error, 'Failed to generate QR token.');
     }
   }
 

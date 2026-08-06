@@ -43,7 +43,8 @@ export class WalletController {
   generateQr = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id;
-      const data = this.walletService.generateQrToken(userId);
+      const token = req.token!;
+      const data = await this.walletService.generateQrToken(userId, token);
 
       res.status(200).json({
         status: 'success',
