@@ -36,6 +36,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const app = express();
 
+// Trust first proxy (Traefik/Coolify) for rate limiting
+app.set('trust proxy', 1);
+
 // Global Middlewares
 app.use(helmet({
   contentSecurityPolicy: false
