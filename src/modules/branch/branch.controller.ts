@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { BranchService } from './branch.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
+import { auditService } from '../audit/audit.service';
+import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 export class BranchController {
   private branchService: BranchService;
@@ -101,8 +103,33 @@ export class BranchController {
         userId
       );
 
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: branchId,
+        action: AuditAction.STOCK_UPDATE,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.PRODUCT,
+        entityId: productId,
+        details: { is_available },
+        req
+      });
+
       sendSuccess(res, updatedMapping, 'Product availability updated successfully.');
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: req.params.branchId,
+        action: AuditAction.STOCK_UPDATE,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.PRODUCT,
+        entityId: req.params.productId,
+        details: { is_available: req.body.is_available, error: error.message },
+        req
+      });
       next(error);
     }
   };

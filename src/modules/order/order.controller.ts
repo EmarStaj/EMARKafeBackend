@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { OrderService } from './order.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
+import { auditService } from '../audit/audit.service';
+import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 export class OrderController {
   private orderService: OrderService;
@@ -39,12 +41,35 @@ export class OrderController {
 
       const order = await this.orderService.scanQRAndCheckout(qr_token, baristaBranchId, baristaToken);
 
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: baristaBranchId,
+        action: AuditAction.QR_SCAN,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.ORDER,
+        entityId: order.id,
+        req
+      });
+
       res.status(201).json({
         status: 'success',
         message: 'QR successfully scanned, payment processed, and order created.',
         data: order
       });
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: req.profile?.branch_id,
+        action: AuditAction.QR_SCAN,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.QR,
+        details: { error: error.message },
+        req
+      });
       next(error);
     }
   };
@@ -98,8 +123,34 @@ export class OrderController {
       const { status } = req.body;
 
       const updatedOrder = await this.orderService.updateOrderStatus(id, status, userProfile);
+      
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (userProfile as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: userProfile.branch_id,
+        action: AuditAction.ORDER_STATUS_UPDATE,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.ORDER,
+        entityId: id,
+        details: { status },
+        req
+      });
+
       sendSuccess(res, updatedOrder, 'Order status updated successfully.');
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
+        actorName: req.user?.email,
+        branchId: req.profile?.branch_id,
+        action: AuditAction.ORDER_STATUS_UPDATE,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.ORDER,
+        entityId: req.params.id,
+        details: { status: req.body.status, error: error.message },
+        req
+      });
       next(error);
     }
   };
@@ -112,8 +163,31 @@ export class OrderController {
 
       const { id } = req.params;
       const cancelledOrder = await this.orderService.cancelOrder(id, userId, token);
+      
+      auditService.logEvent({
+        userId,
+        actorType: (req.profile as any)?.role || AuditActorType.CUSTOMER,
+        actorName: req.user?.email,
+        action: AuditAction.ORDER_CANCEL,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.ORDER,
+        entityId: id,
+        req
+      });
+
       sendSuccess(res, cancelledOrder, 'Order cancelled successfully.');
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.profile as any)?.role || AuditActorType.CUSTOMER,
+        actorName: req.user?.email,
+        action: AuditAction.ORDER_CANCEL,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.ORDER,
+        entityId: req.params.id,
+        details: { error: error.message },
+        req
+      });
       next(error);
     }
   };

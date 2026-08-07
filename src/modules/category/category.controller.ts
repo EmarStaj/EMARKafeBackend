@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { sendSuccess } from '../../utils/response';
+import { auditService } from '../audit/audit.service';
+import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 export class CategoryController {
   private categoryService: CategoryService;
@@ -32,8 +34,31 @@ export class CategoryController {
     try {
       const { name, sort_order } = req.body;
       const newCategory = await this.categoryService.createCategory({ name, sort_order });
+      
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_CREATE,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.CATEGORY,
+        entityId: newCategory.id,
+        details: { name },
+        req
+      });
+
       sendSuccess(res, newCategory, 'Category created successfully.', 201);
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_CREATE,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.CATEGORY,
+        details: { name: req.body.name, error: error.message },
+        req
+      });
       next(error);
     }
   };
@@ -43,8 +68,32 @@ export class CategoryController {
       const { id } = req.params;
       const updatedFields = req.body;
       const updatedCategory = await this.categoryService.updateCategory(id, updatedFields);
+      
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_UPDATE,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.CATEGORY,
+        entityId: id,
+        details: { updatedFields },
+        req
+      });
+
       sendSuccess(res, updatedCategory, 'Category updated successfully.');
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_UPDATE,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.CATEGORY,
+        entityId: req.params.id,
+        details: { updatedFields: req.body, error: error.message },
+        req
+      });
       next(error);
     }
   };
@@ -53,8 +102,31 @@ export class CategoryController {
     try {
       const { id } = req.params;
       await this.categoryService.deleteCategory(id);
+      
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_DELETE,
+        status: AuditStatus.SUCCESS,
+        entityType: AuditEntityType.CATEGORY,
+        entityId: id,
+        req
+      });
+
       sendSuccess(res, null, 'Category deleted successfully.');
-    } catch (error) {
+    } catch (error: any) {
+      auditService.logEvent({
+        userId: req.user?.id,
+        actorType: (req.user as any)?.role || AuditActorType.ADMIN,
+        actorName: req.user?.email,
+        action: AuditAction.CATEGORY_DELETE,
+        status: AuditStatus.FAILURE,
+        entityType: AuditEntityType.CATEGORY,
+        entityId: req.params.id,
+        details: { error: error.message },
+        req
+      });
       next(error);
     }
   };

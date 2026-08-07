@@ -30,6 +30,7 @@ import loyaltyRoutes from './modules/loyalty/loyalty.routes';
 import deviceTokenRoutes from './modules/device-token/device-token.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import auditRoutes from './modules/audit/audit.routes';
 
 dotenv.config();
 
@@ -109,6 +110,7 @@ app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/audit-logs', auditRoutes);
 
 // Fallback for undefined routes (404)
 app.all('*', (req: Request, _res: Response, next: NextFunction) => {
