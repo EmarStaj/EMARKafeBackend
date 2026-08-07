@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { WalletController } from './wallet.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new WalletController();
-
+const controller = container.resolve(WalletController);
 const topupSchema = z.object({
   body: z.object({
     amount: z.number({ required_error: 'Amount is required' }).min(1, 'Amount must be at least 1')

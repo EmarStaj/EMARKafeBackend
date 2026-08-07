@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { DeviceTokenController } from './device-token.controller';
@@ -5,8 +6,7 @@ import { requireAuth } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new DeviceTokenController();
-
+const controller = container.resolve(DeviceTokenController);
 // Zod Validation Schema
 const saveTokenSchema = z.object({
   body: z.object({

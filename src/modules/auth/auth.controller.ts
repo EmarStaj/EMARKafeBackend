@@ -1,22 +1,22 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { sendSuccess } from '../../utils/response';
-import { auditService } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
+import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
+@injectable()
 export class AuthController {
-  private authService: AuthService;
-
-  constructor() {
-    this.authService = new AuthService();
-  }
+  private auditService = container.resolve(AuditService);
+  constructor(private authService: AuthService) {}
 
   signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
       const data = await this.authService.signUp(email, password);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         actorType: AuditActorType.GUEST,
         action: AuditAction.REGISTER,
         status: AuditStatus.SUCCESS,
@@ -27,7 +27,7 @@ export class AuthController {
 
       sendSuccess(res, data, 'Registration successful. Check your email for confirmation.', 201);
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         actorType: AuditActorType.GUEST,
         action: AuditAction.REGISTER,
         status: AuditStatus.FAILURE,
@@ -44,7 +44,7 @@ export class AuthController {
       const { email, password } = req.body;
       const data = await this.authService.signIn(email, password);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: data.user.id,
         actorType: (data.user as any).role || AuditActorType.CUSTOMER,
         actorName: data.user.email,
@@ -55,7 +55,7 @@ export class AuthController {
 
       sendSuccess(res, data, 'Login successful.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         actorType: AuditActorType.GUEST,
         action: AuditAction.LOGIN,
         status: AuditStatus.FAILURE,
@@ -72,7 +72,7 @@ export class AuthController {
       await this.authService.signOut(token, req.user?.id);
       
       if (req.user) {
-        auditService.logEvent({
+        this.auditService.logEvent({
           userId: req.user.id,
           actorType: (req.user as any).role || AuditActorType.CUSTOMER,
           actorName: req.user.email,

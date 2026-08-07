@@ -1,13 +1,11 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { OptionService } from './option.service';
 import { sendSuccess } from '../../utils/response';
 
+@injectable()
 export class OptionController {
-  private optionService: OptionService;
-
-  constructor() {
-    this.optionService = new OptionService();
-  }
+  constructor(private optionService: OptionService) {}
 
   getProductOptions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

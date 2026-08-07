@@ -29,8 +29,8 @@ export const requireAuth = async (
       throw new AppError('Unauthorized: Invalid or expired token', 401);
     }
 
-    // Check in-memory TTL cache before querying the database
-    const cachedProfile = profileCache.get(user.id);
+    // Check Redis TTL cache before querying the database
+    const cachedProfile = await profileCache.get(user.id);
     if (cachedProfile) {
       req.user = user;
       req.token = token;
@@ -64,7 +64,8 @@ export const requireAuth = async (
     }
 
     const userProfile = profile as UserProfile;
-    profileCache.set(user.id, userProfile);
+    // Cache the newly fetched profile
+    await profileCache.set(user.id, userProfile);
 
     // Attach the user, token, and profile to the request context
     req.user = user;

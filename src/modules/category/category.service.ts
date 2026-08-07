@@ -1,6 +1,8 @@
+import { injectable } from 'tsyringe';
 import { CategoryRepository, Category } from './category.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class CategoryService {
   private categoryRepository: CategoryRepository;
 

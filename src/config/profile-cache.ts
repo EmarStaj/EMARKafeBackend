@@ -1,70 +1,71 @@
 import { UserProfile } from '../types';
 import { logger } from './logger';
-
-interface CacheEntry {
-  profile: UserProfile;
-  expiresAt: number;
-}
+import { redis } from './redis';
 
 /**
- * In-Memory TTL Cache for User Profiles.
+ * Redis-backed Cache for User Profiles.
  * Prevents making a database query to `public.profiles` on every authenticated request.
- * Default TTL is 5 minutes (300,000 ms).
+ * Default TTL is 5 minutes (300 seconds).
  */
 export class ProfileCache {
-  private cache = new Map<string, CacheEntry>();
-  private readonly ttlMs: number;
+  private readonly ttlSeconds: number;
+  private readonly prefix = 'profile:';
 
-  constructor(ttlMs = 5 * 60 * 1000) {
-    this.ttlMs = ttlMs;
+  constructor(ttlSeconds = 5 * 60) {
+    this.ttlSeconds = ttlSeconds;
   }
 
   /**
-   * Retrieve a user profile from the cache if present and not expired.
+   * Retrieve a user profile from the cache if present.
    */
-  get(userId: string): UserProfile | null {
-    const entry = this.cache.get(userId);
-    if (!entry) {
-      return null;
+  async get(userId: string): Promise<UserProfile | null> {
+    try {
+      const data = await redis.get(this.prefix + userId);
+      if (!data) return null;
+      return JSON.parse(data) as UserProfile;
+    } catch (error) {
+      logger.error(`Error reading profile from Redis for user ${userId}:`, error);
+      return null; // Fail open
     }
-
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(userId);
-      return null;
-    }
-
-    return entry.profile;
   }
 
   /**
    * Store a user profile in the cache with the configured TTL.
    */
-  set(userId: string, profile: UserProfile): void {
-    const expiresAt = Date.now() + this.ttlMs;
-    this.cache.set(userId, { profile, expiresAt });
+  async set(userId: string, profile: UserProfile): Promise<void> {
+    try {
+      await redis.setex(this.prefix + userId, this.ttlSeconds, JSON.stringify(profile));
+    } catch (error) {
+      logger.error(`Error writing profile to Redis for user ${userId}:`, error);
+    }
   }
 
   /**
    * Remove a user profile from the cache (e.g. upon logout or profile update).
    */
-  invalidate(userId: string): void {
-    if (this.cache.delete(userId)) {
-      logger.debug(`Profile cache invalidated for user ${userId}`);
+  async invalidate(userId: string): Promise<void> {
+    try {
+      const deleted = await redis.del(this.prefix + userId);
+      if (deleted > 0) {
+        logger.debug(`Profile cache invalidated for user ${userId}`);
+      }
+    } catch (error) {
+      logger.error(`Error invalidating profile cache for user ${userId}:`, error);
     }
   }
 
   /**
    * Clear the entire cache (useful for testing or cache resets).
    */
-  clear(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Get the current number of cached profiles.
-   */
-  size(): number {
-    return this.cache.size;
+  async clear(): Promise<void> {
+    try {
+      const keys = await redis.keys(this.prefix + '*');
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } catch (error) {
+      logger.error('Error clearing profile cache:', error);
+    }
   }
 }
 

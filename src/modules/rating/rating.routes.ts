@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { RatingController } from './rating.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new RatingController();
-
+const controller = container.resolve(RatingController);
 // Zod Validation Schemas
 const rateProductSchema = z.object({
   params: z.object({

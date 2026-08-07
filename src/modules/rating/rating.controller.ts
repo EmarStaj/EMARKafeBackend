@@ -1,14 +1,12 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { RatingService } from './rating.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class RatingController {
-  private ratingService: RatingService;
-
-  constructor() {
-    this.ratingService = new RatingService();
-  }
+  constructor(private ratingService: RatingService) {}
 
   rateProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

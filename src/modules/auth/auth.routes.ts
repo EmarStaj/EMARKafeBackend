@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { AuthController } from './auth.controller';
@@ -6,8 +7,7 @@ import { requireAuth } from '../../middlewares/auth.middleware';
 import { authRateLimiter } from '../../middlewares/rate-limit.middleware';
 
 const router = Router();
-const controller = new AuthController();
-
+const controller = container.resolve(AuthController);
 // Zod Validation Schemas
 const registerSchema = z.object({
   body: z.object({

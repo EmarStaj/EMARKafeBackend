@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { BranchController } from './branch.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new BranchController();
-
+const controller = container.resolve(BranchController);
 // Zod Validation Schemas
 const createBranchSchema = z.object({
   body: z.object({

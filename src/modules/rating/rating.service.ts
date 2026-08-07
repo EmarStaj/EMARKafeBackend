@@ -1,8 +1,10 @@
+import { injectable } from 'tsyringe';
 import { RatingRepository } from './rating.repository';
 import { OrderRepository } from '../order/order.repository';
 import { SettingsRepository } from '../settings/settings.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class RatingService {
   private ratingRepository: RatingRepository;
   private orderRepository: OrderRepository;

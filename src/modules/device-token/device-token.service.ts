@@ -1,6 +1,8 @@
+import { injectable } from 'tsyringe';
 import { DeviceTokenRepository } from './device-token.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class DeviceTokenService {
   private deviceTokenRepository: DeviceTokenRepository;
 

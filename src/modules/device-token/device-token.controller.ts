@@ -1,14 +1,12 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { DeviceTokenService } from './device-token.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class DeviceTokenController {
-  private deviceTokenService: DeviceTokenService;
-
-  constructor() {
-    this.deviceTokenService = new DeviceTokenService();
-  }
+  constructor(private deviceTokenService: DeviceTokenService) {}
 
   saveDeviceToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

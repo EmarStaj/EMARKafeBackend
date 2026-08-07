@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe';
 import { BranchRepository, Branch } from './branch.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class BranchService {
   private branchRepository: BranchRepository;
   private menuRepository: MenuRepository;

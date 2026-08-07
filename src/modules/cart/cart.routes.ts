@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { CartController } from './cart.controller';
@@ -5,8 +6,7 @@ import { requireAuth } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new CartController();
-
+const controller = container.resolve(CartController);
 // Zod Validation Schemas
 const addToCartSchema = z.object({
   body: z.object({

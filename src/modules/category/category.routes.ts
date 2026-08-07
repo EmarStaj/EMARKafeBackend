@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { CategoryController } from './category.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new CategoryController();
-
+const controller = container.resolve(CategoryController);
 // Zod Validation Schemas
 const createCategorySchema = z.object({
   body: z.object({

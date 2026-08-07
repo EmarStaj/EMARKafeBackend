@@ -1,6 +1,8 @@
+import { injectable } from 'tsyringe';
 import { ProfileRepository } from './profile.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class ProfileService {
   private profileRepository: ProfileRepository;
 

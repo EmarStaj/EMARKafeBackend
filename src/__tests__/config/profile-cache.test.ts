@@ -1,5 +1,16 @@
 import { ProfileCache } from '../../config/profile-cache';
 import { UserProfile } from '../../types';
+import { redis } from '../../config/redis';
+
+
+
+jest.mock('../../config/logger', () => ({
+  logger: {
+    error: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 
 const mockProfile: UserProfile = {
   id: 'user1',
@@ -12,43 +23,45 @@ describe('ProfileCache', () => {
   let cache: ProfileCache;
 
   beforeEach(() => {
-    cache = new ProfileCache(100); // 100 ms TTL for quick testing
+    cache = new ProfileCache(300); // 300 sec TTL
+    jest.clearAllMocks();
   });
 
-  it('should return null for non-existent userId', () => {
-    expect(cache.get('unknown-user')).toBeNull();
+  it('should return null for non-existent userId', async () => {
+    (redis.get as jest.Mock).mockResolvedValueOnce(null);
+    const result = await cache.get('unknown-user');
+    expect(result).toBeNull();
+    expect(redis.get).toHaveBeenCalledWith('profile:unknown-user');
   });
 
-  it('should store and return a cached profile before expiry', () => {
-    cache.set(mockProfile.id, mockProfile);
-    expect(cache.size()).toBe(1);
-    expect(cache.get(mockProfile.id)).toEqual(mockProfile);
+  it('should store and return a cached profile', async () => {
+    (redis.get as jest.Mock).mockResolvedValueOnce(JSON.stringify(mockProfile));
+    
+    const result = await cache.get(mockProfile.id);
+    expect(result).toEqual(mockProfile);
   });
 
-  it('should expire and return null after TTL has passed', async () => {
-    cache.set(mockProfile.id, mockProfile);
-    expect(cache.get(mockProfile.id)).toEqual(mockProfile);
-
-    // Wait 150 ms to exceed 100 ms TTL
-    await new Promise(resolve => setTimeout(resolve, 150));
-
-    expect(cache.get(mockProfile.id)).toBeNull();
-    expect(cache.size()).toBe(0); // auto-cleared on get
+  it('should set a profile in redis with correct ttl', async () => {
+    await cache.set(mockProfile.id, mockProfile);
+    expect(redis.setex).toHaveBeenCalledWith('profile:user1', 300, JSON.stringify(mockProfile));
   });
 
-  it('should invalidate a cached profile explicitly', () => {
-    cache.set(mockProfile.id, mockProfile);
-    cache.invalidate(mockProfile.id);
-    expect(cache.get(mockProfile.id)).toBeNull();
-    expect(cache.size()).toBe(0);
+  it('should invalidate a cached profile explicitly', async () => {
+    (redis.del as jest.Mock).mockResolvedValueOnce(1);
+    await cache.invalidate(mockProfile.id);
+    expect(redis.del).toHaveBeenCalledWith('profile:user1');
   });
 
-  it('should clear all cached profiles', () => {
-    cache.set('user-1', { ...mockProfile, id: 'user-1' });
-    cache.set('user-2', { ...mockProfile, id: 'user-2' });
-    expect(cache.size()).toBe(2);
-
-    cache.clear();
-    expect(cache.size()).toBe(0);
+  it('should clear all cached profiles', async () => {
+    (redis.keys as jest.Mock).mockResolvedValueOnce(['profile:user-1', 'profile:user-2']);
+    await cache.clear();
+    expect(redis.keys).toHaveBeenCalledWith('profile:*');
+    expect(redis.del).toHaveBeenCalledWith('profile:user-1', 'profile:user-2');
+  });
+  
+  it('should handle redis errors gracefully in get', async () => {
+    (redis.get as jest.Mock).mockRejectedValueOnce(new Error('Redis Error'));
+    const result = await cache.get('user1');
+    expect(result).toBeNull();
   });
 });

@@ -1,16 +1,16 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { OrderService } from './order.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
-import { auditService } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
+import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
+@injectable()
 export class OrderController {
-  private orderService: OrderService;
-
-  constructor() {
-    this.orderService = new OrderService();
-  }
+  private auditService = container.resolve(AuditService);
+  constructor(private orderService: OrderService) {}
 
   placeOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -41,7 +41,7 @@ export class OrderController {
 
       const order = await this.orderService.scanQRAndCheckout(qr_token, baristaBranchId, baristaToken);
 
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,
@@ -59,7 +59,7 @@ export class OrderController {
         data: order
       });
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,
@@ -124,7 +124,7 @@ export class OrderController {
 
       const updatedOrder = await this.orderService.updateOrderStatus(id, status, userProfile);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (userProfile as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,
@@ -139,7 +139,7 @@ export class OrderController {
 
       sendSuccess(res, updatedOrder, 'Order status updated successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.profile as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,
@@ -164,7 +164,7 @@ export class OrderController {
       const { id } = req.params;
       const cancelledOrder = await this.orderService.cancelOrder(id, userId, token);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId,
         actorType: (req.profile as any)?.role || AuditActorType.CUSTOMER,
         actorName: req.user?.email,
@@ -177,7 +177,7 @@ export class OrderController {
 
       sendSuccess(res, cancelledOrder, 'Order cancelled successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.profile as any)?.role || AuditActorType.CUSTOMER,
         actorName: req.user?.email,

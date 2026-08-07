@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { MenuController } from './menu.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new MenuController();
-
+const controller = container.resolve(MenuController);
 // Zod Validation Schemas
 const createItemSchema = z.object({
   body: z.object({

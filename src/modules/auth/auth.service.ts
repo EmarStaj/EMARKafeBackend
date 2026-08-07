@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe';
 import { supabase } from '../../config/supabase';
 import { AppError } from '../../utils/app-error';
 import { profileCache } from '../../config/profile-cache';
 
+@injectable()
 export class AuthService {
   /**
    * Register a new user with email and password.
@@ -48,7 +50,7 @@ export class AuthService {
    */
   async signOut(accessToken: string, userId?: string) {
     if (userId) {
-      profileCache.invalidate(userId);
+      await profileCache.invalidate(userId);
     }
     const { error } = await supabase.auth.admin.signOut(accessToken);
     if (error) {

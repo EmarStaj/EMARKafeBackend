@@ -1,15 +1,13 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { ProfileService } from './profile.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 import { profileCache } from '../../config/profile-cache';
 
+@injectable()
 export class ProfileController {
-  private profileService: ProfileService;
-
-  constructor() {
-    this.profileService = new ProfileService();
-  }
+  constructor(private profileService: ProfileService) {}
 
   getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -38,7 +36,7 @@ export class ProfileController {
 
       const { full_name, phone, avatar_url } = req.body;
       const updatedProfile = await this.profileService.updateProfile(userId, { full_name, phone, avatar_url }, token);
-      profileCache.invalidate(userId);
+      await profileCache.invalidate(userId);
       sendSuccess(res, updatedProfile, 'Profile updated successfully.');
     } catch (error) {
       next(error);
@@ -49,7 +47,7 @@ export class ProfileController {
     try {
       const userId = req.user?.id;
       if (userId) {
-        profileCache.invalidate(userId);
+        await profileCache.invalidate(userId);
       }
       sendSuccess(res, null, 'Profile cache invalidated successfully.');
     } catch (error) {

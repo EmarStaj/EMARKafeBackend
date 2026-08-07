@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { SettingsController } from './settings.controller';
@@ -6,8 +7,7 @@ import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new SettingsController();
-
+const controller = container.resolve(SettingsController);
 // Zod Validation Schema
 const updateSettingSchema = z.object({
   params: z.object({

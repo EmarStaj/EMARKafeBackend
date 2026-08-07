@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe';
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
 
+@injectable()
 export class CartService {
   private cartRepository: CartRepository;
   private menuRepository: MenuRepository;

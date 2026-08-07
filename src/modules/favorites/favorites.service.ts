@@ -1,6 +1,8 @@
+import { injectable } from 'tsyringe';
 import { FavoritesRepository } from './favorites.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class FavoritesService {
   private favoritesRepository: FavoritesRepository;
 

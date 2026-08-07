@@ -1,12 +1,10 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { WalletService } from './wallet.service';
 
+@injectable()
 export class WalletController {
-  private walletService: WalletService;
-
-  constructor() {
-    this.walletService = new WalletService();
-  }
+  constructor(private walletService: WalletService) {}
 
   getBalanceAndTransactions = async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -1,16 +1,16 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { BranchService } from './branch.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
-import { auditService } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
+import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
+@injectable()
 export class BranchController {
-  private branchService: BranchService;
-
-  constructor() {
-    this.branchService = new BranchService();
-  }
+  private auditService = container.resolve(AuditService);
+  constructor(private branchService: BranchService) {}
 
   getAllBranches = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -103,7 +103,7 @@ export class BranchController {
         userId
       );
 
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,
@@ -118,7 +118,7 @@ export class BranchController {
 
       sendSuccess(res, updatedMapping, 'Product availability updated successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.BARISTA,
         actorName: req.user?.email,

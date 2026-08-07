@@ -1,8 +1,12 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
-import { auditService } from './audit.service';
+import { container } from 'tsyringe';
+import { AuditService } from './audit.service';
 import { AuditActorType, AuditAction, AuditStatus } from './audit.constants';
 
+@injectable()
 export class AuditController {
+  private auditService = container.resolve(AuditService);
   getAuditLogs = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -15,7 +19,7 @@ export class AuditController {
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
 
-      const result = await auditService.getAuditLogs({
+      const result = await this.auditService.getAuditLogs({
         page,
         limit,
         actorType,
@@ -36,4 +40,3 @@ export class AuditController {
   };
 }
 
-export const auditController = new AuditController();

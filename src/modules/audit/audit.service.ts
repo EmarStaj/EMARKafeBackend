@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { supabaseAdmin } from '../../config/supabase';
 import { logger } from '../../config/logger';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from './audit.constants';
@@ -27,6 +28,7 @@ export interface GetAuditLogsParams {
   endDate?: string;
 }
 
+@injectable()
 export class AuditService {
   /**
    * Logs an audit event asynchronously. 
@@ -113,4 +115,3 @@ export class AuditService {
   }
 }
 
-export const auditService = new AuditService();

@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { WalletRepository } from './wallet.repository';
 import { CartRepository } from '../cart/cart.repository';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
@@ -6,6 +7,7 @@ import jwt from 'jsonwebtoken';
 const QR_SECRET = process.env.JWT_SECRET || 'super_secret_qr_key_change_in_prod';
 const QR_EXPIRES_IN = '10m'; // QR code is valid for 10 minutes
 
+@injectable()
 export class WalletService {
   private walletRepository: WalletRepository;
   private cartRepository: CartRepository;

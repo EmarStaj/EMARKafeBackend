@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import app, { logger } from './app';
 
 // Auto-deploy test trigger

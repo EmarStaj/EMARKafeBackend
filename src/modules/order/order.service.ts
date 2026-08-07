@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { OrderRepository, OrderItemInput } from './order.repository';
 import { CartRepository } from '../cart/cart.repository';
 import { LoyaltyService } from '../loyalty/loyalty.service';
@@ -7,6 +8,7 @@ import { UserProfile } from '../../types';
 import { logger } from '../../config/logger';
 import { WalletService } from '../wallet/wallet.service';
 
+@injectable()
 export class OrderService {
   private orderRepository: OrderRepository;
   private cartRepository: CartRepository;

@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe';
 import { LoyaltyRepository } from './loyalty.repository';
 import { AppError } from '../../utils/app-error';
 import { logger } from '../../config/logger';
 
+@injectable()
 export class LoyaltyService {
   private loyaltyRepository: LoyaltyRepository;
 

@@ -1,15 +1,15 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { sendSuccess } from '../../utils/response';
-import { auditService } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
+import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
+@injectable()
 export class CategoryController {
-  private categoryService: CategoryService;
-
-  constructor() {
-    this.categoryService = new CategoryService();
-  }
+  private auditService = container.resolve(AuditService);
+  constructor(private categoryService: CategoryService) {}
 
   getAllCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -35,7 +35,7 @@ export class CategoryController {
       const { name, sort_order } = req.body;
       const newCategory = await this.categoryService.createCategory({ name, sort_order });
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -49,7 +49,7 @@ export class CategoryController {
 
       sendSuccess(res, newCategory, 'Category created successfully.', 201);
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -69,7 +69,7 @@ export class CategoryController {
       const updatedFields = req.body;
       const updatedCategory = await this.categoryService.updateCategory(id, updatedFields);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -83,7 +83,7 @@ export class CategoryController {
 
       sendSuccess(res, updatedCategory, 'Category updated successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -103,7 +103,7 @@ export class CategoryController {
       const { id } = req.params;
       await this.categoryService.deleteCategory(id);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -116,7 +116,7 @@ export class CategoryController {
 
       sendSuccess(res, null, 'Category deleted successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,

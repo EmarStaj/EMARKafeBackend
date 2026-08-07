@@ -1,3 +1,4 @@
+import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { FavoritesController } from './favorites.controller';
@@ -5,8 +6,7 @@ import { requireAuth } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
-const controller = new FavoritesController();
-
+const controller = container.resolve(FavoritesController);
 // Zod Validation Schemas
 const addFavoriteSchema = z.object({
   body: z.object({

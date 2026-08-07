@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe';
 import { OptionRepository, ProductOption, ProductOptionValue } from './option.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class OptionService {
   private optionRepository: OptionRepository;
   private menuRepository: MenuRepository;

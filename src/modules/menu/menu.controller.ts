@@ -1,15 +1,15 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { MenuService } from './menu.service';
 import { sendSuccess } from '../../utils/response';
-import { auditService } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
+import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
+@injectable()
 export class MenuController {
-  private menuService: MenuService;
-
-  constructor() {
-    this.menuService = new MenuService();
-  }
+  private auditService = container.resolve(AuditService);
+  constructor(private menuService: MenuService) {}
 
   getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -45,7 +45,7 @@ export class MenuController {
         is_loyalty_eligible,
       });
 
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -59,7 +59,7 @@ export class MenuController {
 
       sendSuccess(res, newItem, 'Product created successfully.', 201);
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -79,7 +79,7 @@ export class MenuController {
       const updatedFields = req.body;
       const updatedItem = await this.menuService.updateItem(id, updatedFields);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -93,7 +93,7 @@ export class MenuController {
 
       sendSuccess(res, updatedItem, 'Product updated successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -113,7 +113,7 @@ export class MenuController {
       const { id } = req.params;
       await this.menuService.deleteItem(id);
       
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,
@@ -126,7 +126,7 @@ export class MenuController {
 
       sendSuccess(res, null, 'Product deleted successfully.');
     } catch (error: any) {
-      auditService.logEvent({
+      this.auditService.logEvent({
         userId: req.user?.id,
         actorType: (req.user as any)?.role || AuditActorType.ADMIN,
         actorName: req.user?.email,

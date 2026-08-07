@@ -1,14 +1,12 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { CartService } from './cart.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class CartController {
-  private cartService: CartService;
-
-  constructor() {
-    this.cartService = new CartService();
-  }
+  constructor(private cartService: CartService) {}
 
   getCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

@@ -17,9 +17,15 @@ describe('requireAuth Middleware — Profile Cache Optimization', () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;
   let mockNext: jest.Mock;
+  let localCache: any = null;
 
-  beforeEach(() => {
-    profileCache.clear();
+  beforeEach(async () => {
+    localCache = null;
+    jest.spyOn(profileCache, 'get').mockImplementation(async () => localCache);
+    jest.spyOn(profileCache, 'set').mockImplementation(async (_id, data) => { localCache = data; });
+    jest.spyOn(profileCache, 'clear').mockImplementation(async () => { localCache = null; });
+
+    await profileCache.clear();
     mockReq = {
       headers: {
         authorization: 'Bearer mock-token',
@@ -32,7 +38,7 @@ describe('requireAuth Middleware — Profile Cache Optimization', () => {
 
   it('should query database on cache miss and cache the profile', async () => {
     // 1. Cache is initially empty
-    expect(profileCache.get('mock-user-id')).toBeNull();
+    expect(await profileCache.get('mock-user-id')).toBeNull();
 
     // 2. Run requireAuth middleware
     await requireAuth(mockReq as Request, mockRes as Response, mockNext);
@@ -43,12 +49,12 @@ describe('requireAuth Middleware — Profile Cache Optimization', () => {
     expect(mockReq.profile).toBeDefined();
 
     // 4. Cache should now have the profile stored
-    expect(profileCache.get('mock-user-id')).toBeDefined();
+    expect(await profileCache.get('mock-user-id')).toBeDefined();
   });
 
   it('should skip database query on cache hit (zero DB roundtrips for profile)', async () => {
     // 1. Pre-populate cache for 'mock-user-id'
-    profileCache.set('mock-user-id', mockProfile);
+    await profileCache.set('mock-user-id', mockProfile);
 
     // 2. Run requireAuth middleware
     await requireAuth(mockReq as Request, mockRes as Response, mockNext);

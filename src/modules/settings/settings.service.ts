@@ -1,6 +1,8 @@
+import { injectable } from 'tsyringe';
 import { SettingsRepository } from './settings.repository';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class SettingsService {
   private settingsRepository: SettingsRepository;
 

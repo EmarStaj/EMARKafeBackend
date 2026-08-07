@@ -1,14 +1,12 @@
+import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
 import { LoyaltyService } from './loyalty.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 
+@injectable()
 export class LoyaltyController {
-  private loyaltyService: LoyaltyService;
-
-  constructor() {
-    this.loyaltyService = new LoyaltyService();
-  }
+  constructor(private loyaltyService: LoyaltyService) {}
 
   getLoyaltyProgress = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
