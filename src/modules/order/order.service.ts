@@ -7,20 +7,17 @@ import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
 import { UserProfile } from '../../types';
 import { logger } from '../../config/logger';
 import { WalletService } from '../wallet/wallet.service';
+import { NotificationService } from '../notification/notification.service';
 
 @injectable()
 export class OrderService {
-  private orderRepository: OrderRepository;
-  private cartRepository: CartRepository;
-  private loyaltyService: LoyaltyService;
-  private walletService: WalletService;
-
-  constructor() {
-    this.orderRepository = new OrderRepository();
-    this.cartRepository = new CartRepository();
-    this.loyaltyService = new LoyaltyService();
-    this.walletService = new WalletService();
-  }
+  constructor(
+    private orderRepository: OrderRepository,
+    private cartRepository: CartRepository,
+    private loyaltyService: LoyaltyService,
+    private walletService: WalletService,
+    private notificationService: NotificationService
+  ) {}
 
   /**
    * Place an order from the user's active cart.
@@ -280,9 +277,25 @@ export class OrderService {
         }
       }
 
-      // 5. Simulate push notification triggers
+      // 5. Trigger Real Push Notifications
       if (status === 'ready') {
-        logger.info(`[Push Notification Simulator] Sent: 'Siparişiniz Hazır!' to user ${order.user_id}`);
+        this.notificationService.sendToUser(
+          order.user_id,
+          'Siparişiniz Hazır! ☕',
+          'Harika bir kahve molası için siparişinizi kasadan teslim alabilirsiniz.'
+        );
+      } else if (status === 'preparing') {
+        this.notificationService.sendToUser(
+          order.user_id,
+          'Siparişiniz Hazırlanıyor 🔄',
+          'Baristalarımız kahvenizi hazırlamaya başladı.'
+        );
+      } else if (status === 'cancelled') {
+        this.notificationService.sendToUser(
+          order.user_id,
+          'Siparişiniz İptal Edildi ❌',
+          'Siparişiniz iptal edilmiştir. İlgili tutar cüzdanınıza iade edildi.'
+        );
       }
 
       return updatedOrder;
@@ -306,6 +319,13 @@ export class OrderService {
       if (order.status !== 'created') {
         throw new AppError('Cannot cancel order. The preparation has already started.', 400);
       }
+
+      // Notify the user about cancellation
+      this.notificationService.sendToUser(
+        order.user_id,
+        'Siparişiniz İptal Edildi ❌',
+        'Müşteri hizmetleri tarafından siparişiniz iptal edildi ve tutar iade edildi.'
+      );
 
       return await this.orderRepository.updateOrderStatus(orderId, 'cancelled');
     } catch (error: unknown) {

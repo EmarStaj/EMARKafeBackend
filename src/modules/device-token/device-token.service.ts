@@ -10,11 +10,11 @@ export class DeviceTokenService {
     this.deviceTokenRepository = new DeviceTokenRepository();
   }
 
-  async saveDeviceToken(userId: string, fcmToken: string, platform: 'ios' | 'android') {
+  async saveDeviceToken(userId: string, onesignal_id: string, platform: 'ios' | 'android') {
     try {
       return await this.deviceTokenRepository.saveDeviceToken({
         user_id: userId,
-        fcm_token: fcmToken,
+        onesignal_id,
         platform
       });
     } catch (error: any) {

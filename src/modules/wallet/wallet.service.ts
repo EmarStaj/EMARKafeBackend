@@ -7,15 +7,15 @@ import jwt from 'jsonwebtoken';
 const QR_SECRET = process.env.JWT_SECRET || 'super_secret_qr_key_change_in_prod';
 const QR_EXPIRES_IN = '10m'; // QR code is valid for 10 minutes
 
+import { NotificationService } from '../notification/notification.service';
+
 @injectable()
 export class WalletService {
-  private walletRepository: WalletRepository;
-  private cartRepository: CartRepository;
-
-  constructor() {
-    this.walletRepository = new WalletRepository();
-    this.cartRepository = new CartRepository();
-  }
+  constructor(
+    private walletRepository: WalletRepository,
+    private cartRepository: CartRepository,
+    private notificationService: NotificationService
+  ) {}
 
   async getBalanceAndTransactions(userId: string, token: string) {
     try {
@@ -30,7 +30,15 @@ export class WalletService {
       if (amount <= 0) {
         throw new AppError('Topup amount must be greater than zero.', 400);
       }
-      return await this.walletRepository.topup(userId, amount, token);
+      const topupResult = await this.walletRepository.topup(userId, amount, token);
+      
+      this.notificationService.sendToUser(
+        userId,
+        'Bakiye Yüklendi 💰',
+        `Cüzdanınıza ${amount} TL başarıyla yüklendi. Keyifli alışverişler dileriz!`
+      );
+      
+      return topupResult;
     } catch (error) {
       rethrowAsAppError(error, 'Failed to top up balance.');
     }

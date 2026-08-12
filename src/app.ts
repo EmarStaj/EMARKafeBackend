@@ -29,6 +29,7 @@ import optionRoutes from './modules/option/option.routes';
 import ratingRoutes from './modules/rating/rating.routes';
 import loyaltyRoutes from './modules/loyalty/loyalty.routes';
 import deviceTokenRoutes from './modules/device-token/device-token.routes';
+import notificationRoutes from './modules/notification/notification.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import auditRoutes from './modules/audit/audit.routes';
@@ -109,6 +110,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api', ratingRoutes); // Mounts /products/:productId/ratings under /api
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/audit-logs', auditRoutes);

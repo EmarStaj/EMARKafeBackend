@@ -8,13 +8,13 @@ import { AppError } from '../../utils/app-error';
 export class DeviceTokenController {
   constructor(private deviceTokenService: DeviceTokenService) {}
 
-  saveDeviceToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  registerToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.id;
       if (!userId) throw new AppError('Unauthorized', 401);
 
-      const { fcm_token, platform } = req.body;
-      const data = await this.deviceTokenService.saveDeviceToken(userId, fcm_token, platform);
+      const { onesignal_id, platform } = req.body;
+      const data = await this.deviceTokenService.saveDeviceToken(userId, onesignal_id, platform);
       sendSuccess(res, data, 'Device token registered successfully.', 201);
     } catch (error) {
       next(error);

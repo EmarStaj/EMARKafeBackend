@@ -15,6 +15,6 @@ const saveTokenSchema = z.object({
   }),
 });
 
-router.post('/', requireAuth, validate(saveTokenSchema), controller.saveDeviceToken);
+router.post('/', requireAuth, validate(saveTokenSchema), controller.registerToken);
 
 export default router;

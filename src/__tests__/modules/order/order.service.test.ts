@@ -2,15 +2,21 @@ import { OrderService } from '../../../modules/order/order.service';
 import { OrderRepository } from '../../../modules/order/order.repository';
 import { CartRepository } from '../../../modules/cart/cart.repository';
 import { LoyaltyService } from '../../../modules/loyalty/loyalty.service';
+import { WalletService } from '../../../modules/wallet/wallet.service';
+import { NotificationService } from '../../../modules/notification/notification.service';
 import { UserProfile } from '../../../types';
 
 jest.mock('../../../modules/order/order.repository');
 jest.mock('../../../modules/cart/cart.repository');
 jest.mock('../../../modules/loyalty/loyalty.service');
+jest.mock('../../../modules/wallet/wallet.service');
+jest.mock('../../../modules/notification/notification.service');
 
 const MockedOrderRepository = OrderRepository as jest.MockedClass<typeof OrderRepository>;
 const MockedCartRepository = CartRepository as jest.MockedClass<typeof CartRepository>;
 const MockedLoyaltyService = LoyaltyService as jest.MockedClass<typeof LoyaltyService>;
+const MockedWalletService = WalletService as jest.MockedClass<typeof WalletService>;
+const MockedNotificationService = NotificationService as jest.MockedClass<typeof NotificationService>;
 
 const MOCK_USER_ID = 'user-uuid-111';
 const MOCK_ORDER_ID = 'order-uuid-222';
@@ -45,8 +51,17 @@ describe('OrderService.cancelOrder', () => {
     MockedOrderRepository.mockClear();
     MockedCartRepository.mockClear();
     MockedLoyaltyService.mockClear();
-    service = new OrderService();
-    mockOrderRepo = MockedOrderRepository.mock.instances[0] as jest.Mocked<OrderRepository>;
+    MockedWalletService.mockClear();
+    MockedNotificationService.mockClear();
+    
+    const orderRepo = new MockedOrderRepository() as any;
+    const cartRepo = new MockedCartRepository() as any;
+    const loyaltySvc = new MockedLoyaltyService({} as any, {} as any) as any;
+    const walletSvc = new MockedWalletService({} as any, {} as any, {} as any) as any;
+    const notifSvc = new MockedNotificationService() as any;
+    
+    service = new OrderService(orderRepo, cartRepo, loyaltySvc, walletSvc, notifSvc);
+    mockOrderRepo = orderRepo;
   });
 
   it('should successfully cancel an order in "created" status', async () => {
@@ -115,8 +130,17 @@ describe('OrderService.updateOrderStatus — Barista branch check', () => {
     MockedOrderRepository.mockClear();
     MockedCartRepository.mockClear();
     MockedLoyaltyService.mockClear();
-    service = new OrderService();
-    mockOrderRepo = MockedOrderRepository.mock.instances[0] as jest.Mocked<OrderRepository>;
+    MockedWalletService.mockClear();
+    MockedNotificationService.mockClear();
+    
+    const orderRepo = new MockedOrderRepository() as any;
+    const cartRepo = new MockedCartRepository() as any;
+    const loyaltySvc = new MockedLoyaltyService({} as any, {} as any) as any;
+    const walletSvc = new MockedWalletService({} as any, {} as any, {} as any) as any;
+    const notifSvc = new MockedNotificationService() as any;
+    
+    service = new OrderService(orderRepo, cartRepo, loyaltySvc, walletSvc, notifSvc);
+    mockOrderRepo = orderRepo;
   });
 
   it('should throw 403 when a barista tries to update an order from a different branch', async () => {

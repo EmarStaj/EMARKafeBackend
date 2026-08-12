@@ -2,14 +2,14 @@ import { injectable } from 'tsyringe';
 import { LoyaltyRepository } from './loyalty.repository';
 import { AppError } from '../../utils/app-error';
 import { logger } from '../../config/logger';
+import { NotificationService } from '../notification/notification.service';
 
 @injectable()
 export class LoyaltyService {
-  private loyaltyRepository: LoyaltyRepository;
-
-  constructor() {
-    this.loyaltyRepository = new LoyaltyRepository();
-  }
+  constructor(
+    private loyaltyRepository: LoyaltyRepository,
+    private notificationService: NotificationService
+  ) {}
 
   async getLoyaltyProgress(userId: string) {
     try {
@@ -57,6 +57,17 @@ export class LoyaltyService {
       // 2. Grant rewards
       for (let i = 0; i < rewardsEarned; i++) {
         await this.loyaltyRepository.createReward(userId, categoryId);
+      }
+
+      if (quantity > 0) {
+        logger.info(`Added ${quantity} stamps for user ${userId}`);
+        
+        // Push notification for loyalty points
+        this.notificationService.sendToUser(
+          userId,
+          'Tebrikler! Puan Kazandınız 🎁',
+          `Siparişinizden ${quantity} kahve puanı kazandınız. Toplam puanınızı cüzdanınızdan görebilirsiniz.`
+        );
       }
 
       return {

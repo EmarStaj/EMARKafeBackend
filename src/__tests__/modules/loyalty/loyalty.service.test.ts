@@ -1,19 +1,27 @@
 import { LoyaltyService } from '../../../modules/loyalty/loyalty.service';
 import { LoyaltyRepository } from '../../../modules/loyalty/loyalty.repository';
+import { NotificationService } from '../../../modules/notification/notification.service';
 
-// Mock the entire LoyaltyRepository
+// Mock the dependencies
 jest.mock('../../../modules/loyalty/loyalty.repository');
+jest.mock('../../../modules/notification/notification.service');
 
 const MockedLoyaltyRepository = LoyaltyRepository as jest.MockedClass<typeof LoyaltyRepository>;
+const MockedNotificationService = NotificationService as jest.MockedClass<typeof NotificationService>;
 
 describe('LoyaltyService.addStampsForProduct', () => {
   let service: LoyaltyService;
   let mockRepo: jest.Mocked<LoyaltyRepository>;
+  let mockNotification: jest.Mocked<NotificationService>;
 
   beforeEach(() => {
     MockedLoyaltyRepository.mockClear();
-    service = new LoyaltyService();
-    mockRepo = MockedLoyaltyRepository.mock.instances[0] as jest.Mocked<LoyaltyRepository>;
+    MockedNotificationService.mockClear();
+    
+    mockRepo = new MockedLoyaltyRepository() as any;
+    mockNotification = new MockedNotificationService() as any;
+    
+    service = new LoyaltyService(mockRepo, mockNotification);
   });
 
   it('should return early with zero stamps when quantity is 0', async () => {
