@@ -2,6 +2,7 @@ import { injectable } from 'tsyringe';
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
+import { supabaseAdmin } from '../../config/supabase';
 
 @injectable()
 export class CartService {
@@ -85,20 +86,52 @@ export class CartService {
         this.optionsMatch(item.selected_options, selectedOptions)
       );
 
+      // 5. Add or update cart item
+      let addedItem;
       if (duplicateItem) {
-        // Update quantity
         const newQuantity = duplicateItem.quantity + quantity;
-        return await this.cartRepository.updateCartItem(duplicateItem.id, newQuantity);
+        addedItem = await this.cartRepository.updateCartItem(duplicateItem.id, newQuantity);
+      } else {
+        addedItem = await this.cartRepository.addToCart({
+          cart_id: activeCart.id,
+          product_id: productId,
+          quantity,
+          selected_options: selectedOptions,
+          unit_price: unitPrice
+        });
       }
 
-      // 5. Add new cart item
-      return await this.cartRepository.addToCart({
-        cart_id: activeCart.id,
-        product_id: productId,
-        quantity,
-        selected_options: selectedOptions,
-        unit_price: unitPrice
-      });
+      // 6. Soft-check inventory if user has a default branch
+      const warnings: any[] = [];
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('branch_id')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.branch_id) {
+        const { data: stockData } = await supabaseAdmin
+          .from('branch_products')
+          .select('is_available')
+          .eq('branch_id', profile.branch_id)
+          .eq('product_id', productId)
+          .single();
+
+        const productName = product.name || 'Product';
+        if (!stockData) {
+          warnings.push({
+            reason: 'not_in_menu',
+            message: `"${productName}" is not available in the menu of your default branch.`
+          });
+        } else if (stockData.is_available === false) {
+          warnings.push({
+            reason: 'out_of_stock',
+            message: `"${productName}" is currently out of stock at your default branch.`
+          });
+        }
+      }
+
+      return { item: addedItem, warnings: warnings.length > 0 ? warnings : undefined };
 
     } catch (error: unknown) {
       rethrowAsAppError(error, 'Failed to add item to cart.');

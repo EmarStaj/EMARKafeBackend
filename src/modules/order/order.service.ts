@@ -3,7 +3,7 @@ import { OrderRepository, OrderItemInput } from './order.repository';
 import { CartRepository } from '../cart/cart.repository';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
-import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 import { UserProfile } from '../../types';
 import { logger } from '../../config/logger';
 import { WalletService } from '../wallet/wallet.service';
@@ -52,6 +52,7 @@ export class OrderService {
     // 3. Calculate total price, validate stock, and map order items
     let totalPrice = 0;
     const itemsToInsert: Omit<OrderItemInput, 'order_id'>[] = [];
+    const unavailableItems: any[] = [];
 
     for (const item of cartItems) {
       const product = item.products as any;
@@ -59,12 +60,22 @@ export class OrderService {
         throw new AppError('Cart contains invalid product.', 400);
       }
 
-      // If a record exists in branch_products and is_available is explicitly false, it is out of stock!
       const isAvailable = availabilityMap.get(item.product_id);
       const productName = product.name || 'Unknown Product';
       
+      // Determine if product is missing or out of stock
       if (isAvailable === false) {
-        throw new AppError(`Product "${productName}" is currently out of stock at this branch.`, 400);
+        unavailableItems.push({ 
+          product_id: item.product_id, 
+          reason: 'out_of_stock', 
+          message: `"${productName}" is currently out of stock at this branch.` 
+        });
+      } else if (isAvailable === undefined) {
+        unavailableItems.push({ 
+          product_id: item.product_id, 
+          reason: 'not_in_menu', 
+          message: `"${productName}" is not available in the menu of this branch.` 
+        });
       }
 
       const itemTotalPrice = Number(item.unit_price) * item.quantity;
@@ -83,6 +94,16 @@ export class OrderService {
       });
     }
 
+    // 4. Batch Error Reporting
+    if (unavailableItems.length > 0) {
+      throw new AppError(
+        'Some items in your cart are not available at the selected branch.', 
+        400, 
+        true, 
+        unavailableItems
+      );
+    }
+
     try {
       // 3. Create the order header
       const order = await this.orderRepository.createOrder({
@@ -91,6 +112,19 @@ export class OrderService {
         total_price: totalPrice,
         status: 'created'
       }, token);
+
+      // --- FINANCIAL DEDUCTION (Saga Step) ---
+      const { data: paymentSuccess, error: paymentError } = await supabaseAdmin.rpc('deduct_balance', {
+         p_user_id: userId,
+         p_amount: totalPrice,
+         p_order_id: order.id
+      });
+
+      if (paymentError || !paymentSuccess) {
+        // Rollback: Mark order as cancelled due to insufficient funds
+        await this.orderRepository.updateOrderStatus(order.id, 'cancelled', token);
+        throw new AppError('Insufficient wallet balance to complete this order.', 402);
+      }
 
       // 4. Attach order_id and insert order items
       const orderItems: OrderItemInput[] = itemsToInsert.map(item => ({
@@ -174,35 +208,36 @@ export class OrderService {
         user_id: customerId,
         branch_id: branchId,
         total_price: totalPrice,
-        status: 'created'
+        status: 'completed' // Direct checkout at counter
       }, baristaToken, true);
 
-      // 5. Attempt to deduct balance via RPC
-      const supabase = getSupabaseForUser(baristaToken);
-      const { data: deductSuccess, error: deductError } = await supabase.rpc('deduct_balance', {
-        p_user_id: customerId,
-        p_amount: totalPrice,
-        p_order_id: order.id
+      // --- FINANCIAL DEDUCTION (Saga Step) ---
+      const { data: paymentSuccess, error: paymentError } = await supabaseAdmin.rpc('deduct_balance', {
+         p_user_id: customerId,
+         p_amount: totalPrice,
+         p_order_id: order.id
       });
 
-      if (deductError || !deductSuccess) {
-        // Cancel the order if payment fails
-        await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
-        throw new AppError('Insufficient balance. Order cancelled.', 400);
+      if (paymentError || !paymentSuccess) {
+        // Rollback: Mark order as cancelled due to insufficient funds
+        await this.orderRepository.updateOrderStatus(order.id, 'cancelled', baristaToken);
+        throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
 
-      // 6. Payment successful: Attach order_id and insert order items
+      // 5. Attach order_id and insert order items
       const orderItems: OrderItemInput[] = itemsToInsert.map(item => ({
         ...item,
         order_id: order.id
       }));
-      await this.orderRepository.createOrderItems(orderItems, baristaToken, true);
+      await this.orderRepository.createOrderItems(orderItems, baristaToken);
 
-      // 7. Update the cart status to 'converted'
-      await this.cartRepository.updateCartStatus(cart.id, 'converted');
+      // 6. Clear the cart
+      await this.cartRepository.clearCart(cart.id);
 
-      // 8. Return the fully populated order receipt
-      return await this.orderRepository.getOrderById(order.id, baristaToken, true);
+      // 7. Add loyalty points
+      // In a real app, loyalty rewards logic runs here.
+
+      return await this.orderRepository.getOrderById(order.id, baristaToken);
     } catch (error: unknown) {
       rethrowAsAppError(error, 'Failed to process QR checkout.');
     }

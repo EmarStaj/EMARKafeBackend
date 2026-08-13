@@ -28,7 +28,7 @@ export const errorMiddleware = (
 
   // Handle AppError (operational errors)
   if (err instanceof AppError) {
-    sendError(res, err.message, err.statusCode);
+    sendError(res, err.message, err.statusCode, err.details);
     return;
   }
 

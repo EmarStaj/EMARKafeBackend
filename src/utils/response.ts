@@ -5,6 +5,7 @@ export interface ApiResponse<T = any> {
   message: string;
   data?: T;
   errors?: any;
+  warnings?: any;
 }
 
 /**
@@ -14,12 +15,14 @@ export const sendSuccess = <T>(
   res: Response,
   data: T,
   message = 'Success',
-  statusCode = 200
+  statusCode = 200,
+  warnings?: any
 ): Response<ApiResponse<T>> => {
   return res.status(statusCode).json({
     success: true,
     message,
     data,
+    warnings,
   });
 };
 

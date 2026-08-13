@@ -28,8 +28,8 @@ export class CartController {
       if (!userId || !token) throw new AppError('Unauthorized', 401);
 
       const { product_id, quantity, selected_options } = req.body;
-      const data = await this.cartService.addToCart(userId, product_id, quantity, selected_options, token);
-      sendSuccess(res, data, 'Item added to cart successfully.', 201);
+      const { item, warnings } = await this.cartService.addToCart(userId, product_id, quantity, selected_options, token);
+      sendSuccess(res, item, 'Item added to cart successfully.', 201, warnings);
     } catch (error) {
       next(error);
     }

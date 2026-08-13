@@ -74,7 +74,7 @@ describe('CartService.addToCart', () => {
     expect(mockCartRepo.addToCart).toHaveBeenCalledWith(
       expect.objectContaining({ product_id: MOCK_PRODUCT_ID, quantity: 2, unit_price: 45 })
     );
-    expect(result).toEqual(newCartItem);
+    expect(result.item).toEqual(newCartItem);
   });
 
   it('should update quantity when same product+options already in cart', async () => {
