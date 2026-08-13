@@ -208,7 +208,7 @@ export class OrderService {
         user_id: customerId,
         branch_id: branchId,
         total_price: totalPrice,
-        status: 'completed' // Direct checkout at counter
+        status: 'created' // Direct checkout at counter, but still needs preparation
       }, baristaToken, true);
 
       // --- FINANCIAL DEDUCTION (Saga Step) ---
