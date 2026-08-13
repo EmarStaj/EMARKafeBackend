@@ -1693,7 +1693,7 @@
         "description": "Retrieves the user current balance and recent transactions.",
         "security": [
           {
-            "bearerAuth": []
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -1712,7 +1712,7 @@
         "description": "Adds the specified amount to the user wallet balance (Mock).",
         "security": [
           {
-            "bearerAuth": []
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -1747,7 +1747,7 @@
         "description": "Generates a secure 10-minute JWT QR token for checkout at the register.",
         "security": [
           {
-            "bearerAuth": []
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -1766,7 +1766,7 @@
         "description": "Scans the customer QR code, deducts the balance, and confirms the order.",
         "security": [
           {
-            "bearerAuth": []
+            "BearerAuth": []
           }
         ],
         "requestBody": {
