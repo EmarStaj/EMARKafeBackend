@@ -28,7 +28,7 @@ export class ProfileService {
   /**
    * Update profile.
    */
-  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string }, token: string) {
+  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string; birth_date?: string }, token: string) {
     try {
       return await this.profileRepository.updateProfile(userId, profileData, token);
     } catch (error: any) {

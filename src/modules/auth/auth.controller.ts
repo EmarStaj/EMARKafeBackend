@@ -13,8 +13,8 @@ export class AuthController {
 
   signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { email, password, full_name, phone } = req.body;
-      const data = await this.authService.signUp(email, password, full_name, phone);
+      const { email, password, full_name, phone, birth_date } = req.body;
+      const data = await this.authService.signUp(email, password, full_name, phone, birth_date);
       
       this.auditService.logEvent({
         actorType: AuditActorType.GUEST,

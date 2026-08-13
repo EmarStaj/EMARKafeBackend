@@ -15,6 +15,7 @@ const registerSchema = z.object({
     password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
     full_name: z.string().optional(),
     phone: z.string().optional(),
+    birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Birth date must be in YYYY-MM-DD format').optional(),
   }),
 });
 

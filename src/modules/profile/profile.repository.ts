@@ -18,7 +18,7 @@ export class ProfileRepository {
   /**
    * Upsert profile fields in the database. Bypasses RLS.
    */
-  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string }, _token: string) {
+  async updateProfile(userId: string, profileData: { full_name?: string; phone?: string; avatar_url?: string; birth_date?: string }, _token: string) {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .upsert({ id: userId, ...profileData })

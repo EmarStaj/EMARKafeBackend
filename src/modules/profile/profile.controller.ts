@@ -34,8 +34,8 @@ export class ProfileController {
         throw new AppError('Unauthorized', 401);
       }
 
-      const { full_name, phone, avatar_url } = req.body;
-      const updatedProfile = await this.profileService.updateProfile(userId, { full_name, phone, avatar_url }, token);
+      const { full_name, phone, avatar_url, birth_date } = req.body;
+      const updatedProfile = await this.profileService.updateProfile(userId, { full_name, phone, avatar_url, birth_date }, token);
       await profileCache.invalidate(userId);
       sendSuccess(res, updatedProfile, 'Profile updated successfully.');
     } catch (error) {
