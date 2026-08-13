@@ -8,10 +8,16 @@ export class AuthService {
   /**
    * Register a new user with email and password.
    */
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, full_name?: string, phone?: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name,
+          phone,
+        }
+      }
     });
 
     if (error) {
