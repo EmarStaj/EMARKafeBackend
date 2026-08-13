@@ -122,7 +122,7 @@ export class OrderService {
 
       if (paymentError || !paymentSuccess) {
         // Rollback: Mark order as cancelled due to insufficient funds
-        await this.orderRepository.updateOrderStatus(order.id, 'cancelled', token);
+        await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
         throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
 
@@ -220,7 +220,7 @@ export class OrderService {
 
       if (paymentError || !paymentSuccess) {
         // Rollback: Mark order as cancelled due to insufficient funds
-        await this.orderRepository.updateOrderStatus(order.id, 'cancelled', baristaToken);
+        await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
         throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
 
