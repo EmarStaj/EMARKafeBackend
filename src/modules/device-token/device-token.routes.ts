@@ -10,7 +10,7 @@ const controller = container.resolve(DeviceTokenController);
 // Zod Validation Schema
 const saveTokenSchema = z.object({
   body: z.object({
-    fcm_token: z.string({ required_error: 'FCM Token is required' }).min(1, 'Token cannot be empty'),
+    onesignal_id: z.string({ required_error: 'OneSignal ID is required' }).min(1, 'Token cannot be empty'),
     platform: z.enum(['ios', 'android'], { required_error: 'Platform must be ios or android' }),
   }),
 });
