@@ -43,6 +43,24 @@ export class ProfileController {
     }
   };
 
+  updateDefaultBranch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const token = req.token;
+
+      if (!userId || !token) {
+        throw new AppError('Unauthorized', 401);
+      }
+
+      const { branch_id } = req.body;
+      const updatedProfile = await this.profileService.updateProfile(userId, { branch_id }, token);
+      await profileCache.invalidate(userId);
+      sendSuccess(res, { branch_id: updatedProfile.branch_id }, 'Default branch updated successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
   clearCache = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.id;

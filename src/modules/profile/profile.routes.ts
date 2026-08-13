@@ -17,11 +17,18 @@ const updateProfileSchema = z.object({
   }),
 });
 
+const updateDefaultBranchSchema = z.object({
+  body: z.object({
+    branch_id: z.string().uuid('Invalid branch ID format'),
+  }),
+});
+
 // All profile endpoints require authentication
 router.use(requireAuth);
 
 router.get('/me', controller.getProfile);
 router.put('/me', validate(updateProfileSchema), controller.updateProfile);
+router.put('/me/default-branch', validate(updateDefaultBranchSchema), controller.updateDefaultBranch);
 router.delete('/cache', controller.clearCache);
 
 export default router;
