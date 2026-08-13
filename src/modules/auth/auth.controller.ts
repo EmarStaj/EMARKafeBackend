@@ -17,10 +17,12 @@ export class AuthController {
       const data = await this.authService.signUp(email, password, full_name, phone, birth_date);
       
       this.auditService.logEvent({
+        userId: data.user?.id,
         actorType: AuditActorType.GUEST,
         action: AuditAction.REGISTER,
         status: AuditStatus.SUCCESS,
         entityType: AuditEntityType.USER,
+        entityId: data.user?.id,
         details: { email },
         req
       });
