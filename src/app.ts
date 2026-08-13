@@ -57,7 +57,11 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (!isProduction) return callback(null, true); // Dev: allow all
+    // Dev mode: allow all
+    if (!isProduction) return callback(null, true);
+    // Production: if ALLOWED_ORIGINS is not configured, allow all (early stage)
+    if (allowedOrigins.length === 0) return callback(null, true);
+    // Production with whitelist: check origin
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
   },
