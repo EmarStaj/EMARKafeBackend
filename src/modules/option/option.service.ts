@@ -1,17 +1,14 @@
-import { injectable } from 'tsyringe';
+import { injectable, inject } from 'tsyringe';
 import { OptionRepository, ProductOption, ProductOptionValue } from './option.repository';
 import { MenuRepository } from '../menu/menu.repository';
 import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class OptionService {
-  private optionRepository: OptionRepository;
-  private menuRepository: MenuRepository;
-
-  constructor() {
-    this.optionRepository = new OptionRepository();
-    this.menuRepository = new MenuRepository();
-  }
+  constructor(
+    @inject(OptionRepository) private optionRepository: OptionRepository,
+    @inject(MenuRepository) private menuRepository: MenuRepository
+  ) {}
 
   async getProductOptions(productId: string) {
     try {

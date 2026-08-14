@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe';
+import { injectable, inject } from 'tsyringe';
 import { MenuRepository, Product } from './menu.repository';
 import { AppError } from '../../utils/app-error';
 import { redis } from '../../config/redis';
@@ -6,31 +6,37 @@ import { logger } from '../../config/logger';
 
 @injectable()
 export class MenuService {
-  private menuRepository: MenuRepository;
   private readonly CACHE_TTL = 3600; // 1 hour
 
-  constructor() {
-    this.menuRepository = new MenuRepository();
-  }
+  constructor(
+    @inject(MenuRepository) private menuRepository: MenuRepository
+  ) {}
 
-  async getAllItems(onlyActive = true) {
+  async getAllItems(onlyActive = true, search?: string, categoryId?: string) {
+    const isFiltered = !!search || !!categoryId;
     const cacheKey = `menu:all:${onlyActive}`;
-    try {
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+    
+    // Bypass cache if there are search or category filters to prevent explosion of cache keys
+    if (!isFiltered) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (err) {
+        logger.error('Redis cache error on getAllItems:', err);
       }
-    } catch (err) {
-      logger.error('Redis cache error on getAllItems:', err);
     }
 
     try {
-      const items = await this.menuRepository.getAllItems(onlyActive);
+      const items = await this.menuRepository.getAllItems(onlyActive, search, categoryId);
       
-      try {
-        await redis.setex(cacheKey, this.CACHE_TTL, JSON.stringify(items));
-      } catch (err) {
-        logger.error('Redis cache set error on getAllItems:', err);
+      if (!isFiltered) {
+        try {
+          await redis.setex(cacheKey, this.CACHE_TTL, JSON.stringify(items));
+        } catch (err) {
+          logger.error('Redis cache set error on getAllItems:', err);
+        }
       }
 
       return items;

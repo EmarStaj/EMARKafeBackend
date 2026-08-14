@@ -20,10 +20,7 @@ export class OrderController {
 
       const order = await this.orderService.placeOrder(userId, branch_id, token);
 
-      res.status(201).json({
-        status: 'success',
-        data: order
-      });
+      sendSuccess(res, order, 'Order placed successfully.', 201);
     } catch (error) {
       next(error);
     }
@@ -53,11 +50,7 @@ export class OrderController {
         req
       });
 
-      res.status(201).json({
-        status: 'success',
-        message: 'QR successfully scanned, payment processed, and order created.',
-        data: order
-      });
+      sendSuccess(res, order, 'QR successfully scanned, payment processed, and order created.', 201);
     } catch (error: any) {
       this.auditService.logEvent({
         userId: req.user?.id,

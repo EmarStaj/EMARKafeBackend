@@ -10,7 +10,9 @@ const router = Router();
 const controller = container.resolve(WalletController);
 const topupSchema = z.object({
   body: z.object({
-    amount: z.number({ required_error: 'Amount is required' }).min(1, 'Amount must be at least 1')
+    amount: z.number({ required_error: 'Amount is required' })
+      .min(1, 'Amount must be at least 1')
+      .max(10000, 'Maximum topup amount is 10000')
   })
 });
 

@@ -77,3 +77,51 @@ export const requireAuth = async (
     next(error);
   }
 };
+
+/**
+ * Middleware that optionally parses a Supabase JWT Bearer token.
+ * If valid, populates req.user, req.token, and req.profile.
+ * If invalid or absent, just calls next() without throwing error.
+ */
+export const optionalAuth = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  // Use the same logic but swallow errors
+  try {
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (!error && user) {
+      const cachedProfile = await profileCache.get(user.id);
+      if (cachedProfile) {
+        req.user = user;
+        req.token = token;
+        req.profile = cachedProfile;
+        return next();
+      }
+
+      let { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile) {
+        req.user = user;
+        req.token = token;
+        req.profile = profile as UserProfile;
+        await profileCache.set(user.id, profile as UserProfile);
+      }
+    }
+  } catch (e) {
+    // Ignore error in optional auth
+  }
+  next();
+};

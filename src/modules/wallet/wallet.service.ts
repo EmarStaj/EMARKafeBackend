@@ -4,7 +4,10 @@ import { CartRepository } from '../cart/cart.repository';
 import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import jwt from 'jsonwebtoken';
 
-const QR_SECRET = process.env.JWT_SECRET || 'super_secret_qr_key_change_in_prod';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not defined.');
+}
+const QR_SECRET = process.env.JWT_SECRET;
 const QR_EXPIRES_IN = '10m'; // QR code is valid for 10 minutes
 
 import { NotificationService } from '../notification/notification.service';
@@ -27,8 +30,8 @@ export class WalletService {
 
   async topup(userId: string, amount: number, token: string) {
     try {
-      if (amount <= 0) {
-        throw new AppError('Topup amount must be greater than zero.', 400);
+      if (amount <= 0 || amount > 10000) {
+        throw new AppError('Topup amount must be between 1 and 10000.', 400);
       }
       const topupResult = await this.walletRepository.topup(userId, amount, token);
       

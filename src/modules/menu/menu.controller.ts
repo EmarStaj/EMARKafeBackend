@@ -13,9 +13,18 @@ export class MenuController {
 
   getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Admins can see inactive items if they pass query onlyActive=false
-      const onlyActive = req.query.onlyActive !== 'false';
-      const items = await this.menuService.getAllItems(onlyActive);
+      let onlyActive = true;
+      if (req.query.onlyActive === 'false') {
+        const profile = req.profile;
+        if (profile && (profile.role === 'admin' || profile.role === 'branch_manager')) {
+          onlyActive = false;
+        }
+      }
+      
+      const search = req.query.search as string | undefined;
+      const categoryId = req.query.category_id as string | undefined;
+
+      const items = await this.menuService.getAllItems(onlyActive, search, categoryId);
       sendSuccess(res, items, 'Products retrieved successfully.');
     } catch (error) {
       next(error);

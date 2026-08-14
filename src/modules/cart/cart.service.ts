@@ -90,6 +90,9 @@ export class CartService {
       let addedItem;
       if (duplicateItem) {
         const newQuantity = duplicateItem.quantity + quantity;
+        if (newQuantity > 50) {
+          throw new AppError('Quantity cannot exceed 50 per item', 400);
+        }
         addedItem = await this.cartRepository.updateCartItem(duplicateItem.id, newQuantity);
       } else {
         addedItem = await this.cartRepository.addToCart({
@@ -141,6 +144,9 @@ export class CartService {
   async updateCartItem(cartItemId: string, quantity: number, _token: string) {
     if (quantity <= 0) {
       return await this.removeFromCart(cartItemId);
+    }
+    if (quantity > 50) {
+      throw new AppError('Quantity cannot exceed 50 per item', 400);
     }
 
     try {

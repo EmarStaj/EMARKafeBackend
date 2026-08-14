@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../config/supabase';
+import { injectable } from 'tsyringe';
 
 export interface Category {
   id?: string;
@@ -6,6 +7,7 @@ export interface Category {
   sort_order?: number;
 }
 
+@injectable()
 export class CategoryRepository {
   /**
    * Fetch all categories sorted by sort_order.
@@ -13,11 +15,20 @@ export class CategoryRepository {
   async getAllCategories() {
     const { data, error } = await supabaseAdmin
       .from('categories')
-      .select('*')
+      .select('*, products(count)')
       .order('sort_order', { ascending: true });
 
     if (error) throw error;
-    return data;
+    
+    // Transform Supabase aggregate count to a flat product_count field
+    return data.map((cat: any) => {
+      let count = 0;
+      if (cat.products && Array.isArray(cat.products) && cat.products.length > 0) {
+        count = cat.products[0].count || 0;
+      }
+      const { products, ...rest } = cat;
+      return { ...rest, product_count: count };
+    });
   }
 
   /**
@@ -67,6 +78,17 @@ export class CategoryRepository {
    * Delete a category.
    */
   async deleteCategory(id: string) {
+    // Check if category has any products
+    const { count, error: countError } = await supabaseAdmin
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', id);
+
+    if (countError) throw countError;
+    if (count && count > 0) {
+      throw new Error('Cannot delete category because it contains active or inactive products.');
+    }
+
     const { error } = await supabaseAdmin
       .from('categories')
       .delete()

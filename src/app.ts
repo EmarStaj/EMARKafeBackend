@@ -77,6 +77,20 @@ app.use(globalRateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Force Content-Type: application/json for POST, PUT, PATCH
+app.use((req: Request, res: Response, next: NextFunction): void => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    if (!req.is('application/json') && !req.is('multipart/form-data')) {
+      res.status(415).json({
+        success: false,
+        message: 'Unsupported Media Type: Only application/json is allowed'
+      });
+      return;
+    }
+  }
+  next();
+});
+
 // Health Check Endpoint — includes DB connectivity test
 app.get('/health', async (_req: Request, res: Response) => {
   let dbStatus = 'ok';
@@ -110,8 +124,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/branches', branchRoutes);
-app.use('/api/options', optionRoutes);
-app.use('/api', ratingRoutes); // Mounts /products/:productId/ratings under /api
+app.use('/api/menu', optionRoutes); // Mount options under /api/menu to match client paths
+app.use('/api/ratings', ratingRoutes); // Mounts /products/:productId/ratings under /api/ratings
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
 app.use('/api/notifications', notificationRoutes);

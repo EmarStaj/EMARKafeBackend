@@ -71,4 +71,34 @@ export class RatingRepository {
     return data;
   }
 
+  /**
+   * Recalculate and update avg_rating and rating_count on products table
+   */
+  async updateProductRatingStats(productId: string) {
+    // Calculate new stats
+    const { data: ratings, error: fetchError } = await supabaseAdmin
+      .from('product_ratings')
+      .select('rating')
+      .eq('product_id', productId);
+
+    if (fetchError) throw fetchError;
+
+    const count = ratings.length;
+    const avg = count > 0 
+      ? ratings.reduce((sum, r) => sum + r.rating, 0) / count 
+      : 0;
+
+    // Update product
+    const { error: updateError } = await supabaseAdmin
+      .from('products')
+      .update({
+        rating_count: count,
+        avg_rating: Number(avg.toFixed(2))
+      })
+      .eq('id', productId);
+
+    if (updateError) throw updateError;
+    
+    return { avg_rating: Number(avg.toFixed(2)), rating_count: count };
+  }
 }

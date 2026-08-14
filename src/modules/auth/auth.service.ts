@@ -41,14 +41,7 @@ export class AuthService {
       throw new AppError(error.message, 400);
     }
 
-    return {
-      user: data.user,
-      session: {
-        access_token: data.session?.access_token,
-        refresh_token: data.session?.refresh_token,
-        expires_at: data.session?.expires_at,
-      },
-    };
+    return data;
   }
 
   /**
@@ -63,5 +56,36 @@ export class AuthService {
     if (error) {
       throw new AppError(error.message, 400);
     }
+  }
+
+  /**
+   * Send a password reset email.
+   */
+  async forgotPassword(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) {
+      throw new AppError(error.message, 400);
+    }
+  }
+
+  /**
+   * Reset user password (used after following the link in the email).
+   */
+  async resetPassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      throw new AppError(error.message, 400);
+    }
+  }
+
+  /**
+   * Refresh the access token using a refresh token.
+   */
+  async refreshSession(refreshToken: string) {
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+    if (error) {
+      throw new AppError(error.message, 401);
+    }
+    return data;
   }
 }

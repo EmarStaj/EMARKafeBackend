@@ -15,7 +15,7 @@ const createBranchSchema = z.object({
     address: z.string().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
-    opening_hours: z.any().optional(),
+    opening_hours: z.record(z.string()).optional(),
     is_active: z.boolean().optional(),
   }),
 });
@@ -26,7 +26,7 @@ const updateBranchSchema = z.object({
     address: z.string().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
-    opening_hours: z.any().optional(),
+    opening_hours: z.record(z.string()).optional(),
     is_active: z.boolean().optional(),
   }),
   params: z.object({

@@ -4,11 +4,7 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class FavoritesService {
-  private favoritesRepository: FavoritesRepository;
-
-  constructor() {
-    this.favoritesRepository = new FavoritesRepository();
-  }
+  constructor(private favoritesRepository: FavoritesRepository) {}
 
   async getFavorites(token: string, userId?: string) {
     try {

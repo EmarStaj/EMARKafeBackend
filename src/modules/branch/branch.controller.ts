@@ -52,6 +52,12 @@ export class BranchController {
   updateBranch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      
+      const userProfile = req.profile;
+      if (userProfile && userProfile.role === 'branch_manager' && userProfile.branch_id !== id) {
+        throw new AppError('Forbidden: You can only update your own branch.', 403);
+      }
+
       const updatedFields = req.body;
       const updatedBranch = await this.branchService.updateBranch(id, updatedFields);
       sendSuccess(res, updatedBranch, 'Branch updated successfully.');
@@ -90,10 +96,10 @@ export class BranchController {
         throw new AppError('Unauthorized', 401);
       }
 
-      // Baristas can only update stock for their own branch!
+      // Baristas and Branch Managers can only update stock for their own branch!
       const userProfile = req.profile;
-      if (userProfile && userProfile.role === 'barista' && userProfile.branch_id !== branchId) {
-        throw new AppError('Forbidden: Baristas can only manage stock of their own branch.', 403);
+      if (userProfile && ['barista', 'branch_manager'].includes(userProfile.role) && userProfile.branch_id !== branchId) {
+        throw new AppError('Forbidden: You can only manage stock of your own branch.', 403);
       }
 
       const updatedMapping = await this.branchService.updateBranchProductAvailability(

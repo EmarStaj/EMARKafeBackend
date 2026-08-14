@@ -1,14 +1,12 @@
-import { injectable } from 'tsyringe';
+import { injectable, inject } from 'tsyringe';
 import { CategoryRepository, Category } from './category.repository';
 import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class CategoryService {
-  private categoryRepository: CategoryRepository;
-
-  constructor() {
-    this.categoryRepository = new CategoryRepository();
-  }
+  constructor(
+    @inject(CategoryRepository) private categoryRepository: CategoryRepository
+  ) {}
 
   async getAllCategories() {
     try {

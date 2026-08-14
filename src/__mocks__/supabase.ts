@@ -32,6 +32,7 @@ export const mockQueryBuilder = buildQueryMock;
 
 export const supabaseAdmin = {
   from: jest.fn(() => buildQueryMock()),
+  rpc: jest.fn().mockResolvedValue({ data: true, error: null }),
   auth: {
     admin: {
       signOut: jest.fn().mockResolvedValue({ error: null }),

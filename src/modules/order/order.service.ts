@@ -104,8 +104,23 @@ export class OrderService {
       );
     }
 
+    // 4.5. Check wallet balance BEFORE creating the order (BUG-04)
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      throw new AppError('Failed to fetch user wallet balance.', 400);
+    }
+
+    if (Number(profile.wallet_balance) < totalPrice) {
+      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but your balance is ${profile.wallet_balance} TL.`, 402);
+    }
+
     try {
-      // 3. Create the order header
+      // 5. Create the order header
       const order = await this.orderRepository.createOrder({
         user_id: userId,
         branch_id: branchId,
@@ -202,6 +217,21 @@ export class OrderService {
       });
     }
 
+    // 3.5 Check wallet balance BEFORE creating the order (BUG-04)
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('id', customerId)
+      .single();
+
+    if (profileError || !profile) {
+      throw new AppError('Failed to fetch customer wallet balance.', 400);
+    }
+
+    if (Number(profile.wallet_balance) < totalPrice) {
+      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but balance is ${profile.wallet_balance} TL.`, 402);
+    }
+
     try {
       // 4. Create the order header
       const order = await this.orderRepository.createOrder({
@@ -292,6 +322,14 @@ export class OrderService {
         throw new AppError('Forbidden: Baristas can only update orders belonging to their own branch.', 403);
       }
 
+      // 2.5 Prevent redundant or invalid status updates (BUG-01 Idempotency)
+      if (order.status === status) {
+        return order; // Already in target status, idempotent return
+      }
+      if (order.status === 'completed' || order.status === 'cancelled') {
+        throw new AppError('Cannot update an order that is already completed or cancelled.', 400);
+      }
+
       // 3. Perform update (and set completed_at timestamp if status is 'completed')
       const completedAt = status === 'completed' ? new Date().toISOString() : undefined;
       const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status, completedAt);
@@ -354,6 +392,24 @@ export class OrderService {
       if (order.status !== 'created') {
         throw new AppError('Cannot cancel order. The preparation has already started.', 400);
       }
+
+      // Refund the balance
+      const { data: refundSuccess, error: refundError } = await supabaseAdmin.rpc('add_balance', {
+        p_user_id: userId,
+        p_amount: order.total_price
+      });
+
+      if (refundError || !refundSuccess) {
+        throw new AppError('Failed to refund wallet balance.', 500);
+      }
+
+      // Record the refund transaction (BUG-02)
+      await supabaseAdmin.from('wallet_transactions').insert({
+        user_id: userId,
+        amount: order.total_price,
+        type: 'refund',
+        order_id: order.id
+      });
 
       // Notify the user about cancellation
       this.notificationService.sendToUser(

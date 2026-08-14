@@ -2,7 +2,7 @@ import { container } from 'tsyringe';
 import { Router } from 'express';
 import { z } from 'zod';
 import { MenuController } from './menu.controller';
-import { requireAuth } from '../../middlewares/auth.middleware';
+import { requireAuth, optionalAuth } from '../../middlewares/auth.middleware';
 import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
@@ -43,8 +43,8 @@ const getItemSchema = z.object({
 });
 
 // Public Endpoints
-router.get('/', controller.getAllItems);
-router.get('/:id', validate(getItemSchema), controller.getItemById);
+router.get('/', optionalAuth, controller.getAllItems);
+router.get('/:id', optionalAuth, validate(getItemSchema), controller.getItemById);
 
 // Admin-only / Authenticated Endpoints
 router.post('/', requireAuth, requireRole(['admin']), validate(createItemSchema), controller.createItem);

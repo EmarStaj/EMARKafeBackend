@@ -22,8 +22,8 @@ describe('FavoritesService.addFavorite', () => {
 
   beforeEach(() => {
     MockedFavoritesRepository.mockClear();
-    service = new FavoritesService();
-    mockRepo = MockedFavoritesRepository.mock.instances[0] as jest.Mocked<FavoritesRepository>;
+    mockRepo = new MockedFavoritesRepository() as jest.Mocked<FavoritesRepository>;
+    service = new FavoritesService(mockRepo);
   });
 
   it('should return { isNew: true } and the new record when adding a new favorite', async () => {
@@ -74,8 +74,8 @@ describe('FavoritesService.removeFavorite', () => {
 
   beforeEach(() => {
     MockedFavoritesRepository.mockClear();
-    service = new FavoritesService();
-    mockRepo = MockedFavoritesRepository.mock.instances[0] as jest.Mocked<FavoritesRepository>;
+    mockRepo = new MockedFavoritesRepository() as jest.Mocked<FavoritesRepository>;
+    service = new FavoritesService(mockRepo);
   });
 
   it('should call removeFavorite on the repository', async () => {

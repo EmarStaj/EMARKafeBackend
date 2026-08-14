@@ -27,7 +27,7 @@ export class AuthController {
         req
       });
 
-      sendSuccess(res, data, 'Registration successful. Check your email for confirmation.', 201);
+      sendSuccess(res, data, 'Registration successful.', 201);
     } catch (error: any) {
       this.auditService.logEvent({
         actorType: AuditActorType.GUEST,
@@ -98,6 +98,36 @@ export class AuthController {
         user: { ...req.user, role },
         profile: req.profile 
       }, 'Current user retrieved successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = req.body;
+      await this.authService.forgotPassword(email);
+      sendSuccess(res, null, 'If an account with this email exists, a password reset link has been sent.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { password } = req.body;
+      await this.authService.resetPassword(password);
+      sendSuccess(res, null, 'Password reset successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  refresh = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { refresh_token } = req.body;
+      const data = await this.authService.refreshSession(refresh_token);
+      sendSuccess(res, data, 'Session refreshed successfully.');
     } catch (error) {
       next(error);
     }

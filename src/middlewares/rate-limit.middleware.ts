@@ -1,7 +1,16 @@
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import Redis from 'ioredis';
 import { Request, Response, NextFunction } from 'express';
 
 const isRateLimitEnabled = process.env.RATE_LIMIT_ENABLED !== 'false';
+
+// Initialize Redis client if URL is provided
+const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : undefined;
+
+if (redisClient) {
+  redisClient.on('error', (err) => console.error('Redis Client Error', err));
+}
 
 // No-op middleware that just passes through
 const noopMiddleware = (_req: Request, _res: Response, next: NextFunction) => next();
@@ -13,6 +22,9 @@ const noopMiddleware = (_req: Request, _res: Response, next: NextFunction) => ne
  */
 export const globalRateLimiter = isRateLimitEnabled
   ? rateLimit({
+      store: redisClient ? new RedisStore({
+        sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as any,
+      }) : undefined,
       windowMs: 15 * 60 * 1000,
       max: 100,
       standardHeaders: true,
@@ -32,6 +44,9 @@ export const globalRateLimiter = isRateLimitEnabled
  */
 export const authRateLimiter = isRateLimitEnabled
   ? rateLimit({
+      store: redisClient ? new RedisStore({
+        sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as any,
+      }) : undefined,
       windowMs: 15 * 60 * 1000,
       max: 10,
       standardHeaders: true,

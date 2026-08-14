@@ -7,12 +7,16 @@ import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
 const controller = container.resolve(ProfileController);
+
 // Zod Validation Schemas
 const updateProfileSchema = z.object({
   body: z.object({
-    full_name: z.string().optional(),
-    phone: z.string().optional(),
-    birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Birth date must be in YYYY-MM-DD format').optional(),
+    full_name: z.string().trim().max(100, 'Full name cannot exceed 100 characters').optional(),
+    phone: z.string().regex(/^[0-9+\-\s]{10,15}$/, 'Invalid phone number format').optional(),
+    birth_date: z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Birth date must be in YYYY-MM-DD format')
+      .refine(d => new Date(d) < new Date(), { message: 'Birth date must be in the past' })
+      .optional(),
     avatar_url: z.string().url('Avatar must be a valid URL').optional().or(z.literal('')),
   }),
 });

@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 
+process.env.JWT_SECRET = 'test_secret';
+
 jest.mock('./src/config/redis', () => ({
   redis: {
     get: jest.fn(),

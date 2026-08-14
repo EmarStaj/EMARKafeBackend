@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../config/supabase';
+import { injectable } from 'tsyringe';
 
 export interface Product {
   id?: string;
@@ -11,11 +12,12 @@ export interface Product {
   is_loyalty_eligible?: boolean;
 }
 
+@injectable()
 export class MenuRepository {
   /**
    * Fetch all active products (menu items), joined with category information.
    */
-  async getAllItems(onlyActive = true) {
+  async getAllItems(onlyActive = true, search?: string, categoryId?: string) {
     let query = supabaseAdmin
       .from('products')
       .select(`
@@ -38,6 +40,14 @@ export class MenuRepository {
 
     if (onlyActive) {
       query = query.eq('is_active', true);
+    }
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
     }
 
     const { data, error } = await query;
@@ -65,6 +75,17 @@ export class MenuRepository {
         categories (
           id,
           name
+        ),
+        product_options (
+          id,
+          name,
+          is_required,
+          is_multi_select,
+          product_option_values (
+            id,
+            label,
+            price_delta
+          )
         )
       `)
       .eq('id', id)
@@ -104,12 +125,12 @@ export class MenuRepository {
   }
 
   /**
-   * Delete a product.
+   * Delete a product (Soft Delete).
    */
   async deleteItem(id: string) {
     const { error } = await supabaseAdmin
       .from('products')
-      .delete()
+      .update({ is_active: false })
       .eq('id', id);
 
     if (error) throw error;

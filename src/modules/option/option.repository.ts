@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../config/supabase';
+import { injectable } from 'tsyringe';
 
 export interface ProductOption {
   id?: string;
@@ -15,6 +16,7 @@ export interface ProductOptionValue {
   price_delta?: number;
 }
 
+@injectable()
 export class OptionRepository {
   /**
    * Fetch all options for a product, joined with their selectable values.

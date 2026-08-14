@@ -6,15 +6,11 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class RatingService {
-  private ratingRepository: RatingRepository;
-  private orderRepository: OrderRepository;
-  private settingsRepository: SettingsRepository;
-
-  constructor() {
-    this.ratingRepository = new RatingRepository();
-    this.orderRepository = new OrderRepository();
-    this.settingsRepository = new SettingsRepository();
-  }
+  constructor(
+    private ratingRepository: RatingRepository,
+    private orderRepository: OrderRepository,
+    private settingsRepository: SettingsRepository
+  ) {}
 
   /**
    * Add or update product rating for a specific completed order.
@@ -27,7 +23,15 @@ export class RatingService {
 
     try {
       // 1. Verify the order exists and belongs to the user (via token)
-      const order = await this.orderRepository.getOrderById(orderId, token);
+      let order;
+      try {
+        order = await this.orderRepository.getOrderById(orderId, token);
+      } catch (e: any) {
+        if (e.code === 'PGRST116') {
+          throw new AppError('Order not found or access denied.', 404);
+        }
+        throw e;
+      }
       if (!order || order.user_id !== userId) {
         throw new AppError('Order not found or access denied.', 404);
       }
@@ -67,10 +71,12 @@ export class RatingService {
         rating
       });
 
-      // Database trigger automatically updates average rating and count on products table.
+      // 5. Update stats on products table manually (fixes missing DB trigger)
+      const stats = await this.ratingRepository.updateProductRatingStats(productId);
+
       return {
         ratingRecord,
-        stats: null // Omitted since DB handles it now
+        stats
       };
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to submit rating.', 400);
