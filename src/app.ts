@@ -50,20 +50,25 @@ app.use(helmet({
 
 // CORS — restrict to allowed origins in production
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
   : [];
+
+if (isProduction && allowedOrigins.length === 0) {
+  logger.warn('⚠️ SECURITY WARNING: ALLOWED_ORIGINS is not set in production. CORS whitelist is permissive for early deployment.');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
+    // Allow requests with no origin (mobile apps, native HTTP clients, Postman)
     if (!origin) return callback(null, true);
     // Dev mode: allow all
     if (!isProduction) return callback(null, true);
-    // Production: if ALLOWED_ORIGINS is not configured, allow all (early stage)
-    if (allowedOrigins.length === 0) return callback(null, true);
     // Production with whitelist: check origin
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
+    if (allowedOrigins.length > 0) {
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
+    }
+    return callback(null, true);
   },
   credentials: true,
 }));
