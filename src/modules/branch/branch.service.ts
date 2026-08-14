@@ -5,13 +5,10 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class BranchService {
-  private branchRepository: BranchRepository;
-  private menuRepository: MenuRepository;
-
-  constructor() {
-    this.branchRepository = new BranchRepository();
-    this.menuRepository = new MenuRepository();
-  }
+  constructor(
+    private branchRepository: BranchRepository,
+    private menuRepository: MenuRepository
+  ) {}
 
   async getAllBranches(onlyActive = true) {
     try {

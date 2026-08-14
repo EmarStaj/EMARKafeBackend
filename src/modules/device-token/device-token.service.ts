@@ -4,11 +4,7 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class DeviceTokenService {
-  private deviceTokenRepository: DeviceTokenRepository;
-
-  constructor() {
-    this.deviceTokenRepository = new DeviceTokenRepository();
-  }
+  constructor(private deviceTokenRepository: DeviceTokenRepository) {}
 
   async saveDeviceToken(userId: string, onesignal_id: string, platform: 'ios' | 'android') {
     try {

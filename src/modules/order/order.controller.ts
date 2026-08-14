@@ -4,13 +4,14 @@ import { OrderService } from './order.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 import { AuditService } from '../audit/audit.service';
-import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 @injectable()
 export class OrderController {
-  private auditService = container.resolve(AuditService);
-  constructor(private orderService: OrderService) {}
+  constructor(
+    private orderService: OrderService,
+    private auditService: AuditService
+  ) {}
 
   placeOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {

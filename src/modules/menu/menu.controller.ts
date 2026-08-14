@@ -3,13 +3,14 @@ import { Request, Response, NextFunction } from 'express';
 import { MenuService } from './menu.service';
 import { sendSuccess } from '../../utils/response';
 import { AuditService } from '../audit/audit.service';
-import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 @injectable()
 export class MenuController {
-  private auditService = container.resolve(AuditService);
-  constructor(private menuService: MenuService) {}
+  constructor(
+    private menuService: MenuService,
+    private auditService: AuditService
+  ) {}
 
   getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

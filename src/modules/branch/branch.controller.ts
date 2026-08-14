@@ -4,13 +4,14 @@ import { BranchService } from './branch.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/app-error';
 import { AuditService } from '../audit/audit.service';
-import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 @injectable()
 export class BranchController {
-  private auditService = container.resolve(AuditService);
-  constructor(private branchService: BranchService) {}
+  constructor(
+    private branchService: BranchService,
+    private auditService: AuditService
+  ) {}
 
   getAllBranches = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

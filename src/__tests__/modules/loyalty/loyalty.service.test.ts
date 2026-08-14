@@ -19,7 +19,7 @@ describe('LoyaltyService.addStampsForProduct', () => {
     MockedNotificationService.mockClear();
     
     mockRepo = new MockedLoyaltyRepository() as any;
-    mockNotification = new MockedNotificationService() as any;
+    mockNotification = new MockedNotificationService({} as any) as any;
     
     service = new LoyaltyService(mockRepo, mockNotification);
   });

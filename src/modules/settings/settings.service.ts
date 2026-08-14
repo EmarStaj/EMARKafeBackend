@@ -4,11 +4,7 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class SettingsService {
-  private settingsRepository: SettingsRepository;
-
-  constructor() {
-    this.settingsRepository = new SettingsRepository();
-  }
+  constructor(private settingsRepository: SettingsRepository) {}
 
   async getSettings() {
     try {

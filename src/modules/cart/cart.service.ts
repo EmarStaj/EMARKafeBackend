@@ -6,13 +6,10 @@ import { supabaseAdmin } from '../../config/supabase';
 
 @injectable()
 export class CartService {
-  private cartRepository: CartRepository;
-  private menuRepository: MenuRepository;
-
-  constructor() {
-    this.cartRepository = new CartRepository();
-    this.menuRepository = new MenuRepository();
-  }
+  constructor(
+    private cartRepository: CartRepository,
+    private menuRepository: MenuRepository
+  ) {}
 
   /**
    * Fetch current user's active cart.

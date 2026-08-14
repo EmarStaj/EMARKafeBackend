@@ -3,13 +3,14 @@ import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from './category.service';
 import { sendSuccess } from '../../utils/response';
 import { AuditService } from '../audit/audit.service';
-import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 @injectable()
 export class CategoryController {
-  private auditService = container.resolve(AuditService);
-  constructor(private categoryService: CategoryService) {}
+  constructor(
+    private categoryService: CategoryService,
+    private auditService: AuditService
+  ) {}
 
   getAllCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

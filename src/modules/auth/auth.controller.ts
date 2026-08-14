@@ -3,13 +3,14 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { sendSuccess } from '../../utils/response';
 import { AuditService } from '../audit/audit.service';
-import { container } from 'tsyringe';
 import { AuditActorType, AuditAction, AuditStatus, AuditEntityType } from '../audit/audit.constants';
 
 @injectable()
 export class AuthController {
-  private auditService = container.resolve(AuditService);
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private auditService: AuditService
+  ) {}
 
   signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

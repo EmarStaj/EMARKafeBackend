@@ -7,10 +7,9 @@ const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
 
 @injectable()
 export class NotificationService {
-  private deviceTokenRepo = new DeviceTokenRepository();
   private apiUrl = 'https://onesignal.com/api/v1/notifications';
 
-  constructor() {
+  constructor(private deviceTokenRepo: DeviceTokenRepository) {
     if (ONESIGNAL_APP_ID && ONESIGNAL_REST_API_KEY) {
       logger.info('OneSignal NotificationService initialized successfully (using native fetch).');
     } else {

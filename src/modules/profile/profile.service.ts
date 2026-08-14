@@ -4,11 +4,7 @@ import { AppError } from '../../utils/app-error';
 
 @injectable()
 export class ProfileService {
-  private profileRepository: ProfileRepository;
-
-  constructor() {
-    this.profileRepository = new ProfileRepository();
-  }
+  constructor(private profileRepository: ProfileRepository) {}
 
   /**
    * Get user profile. Handles PGRST116 (No rows found) by throwing 404.

@@ -31,9 +31,9 @@ describe('CartService.addToCart', () => {
   beforeEach(() => {
     MockedCartRepository.mockClear();
     MockedMenuRepository.mockClear();
-    service = new CartService();
-    mockCartRepo = MockedCartRepository.mock.instances[0] as jest.Mocked<CartRepository>;
-    mockMenuRepo = MockedMenuRepository.mock.instances[0] as jest.Mocked<MenuRepository>;
+    mockCartRepo = new MockedCartRepository() as any;
+    mockMenuRepo = new MockedMenuRepository() as any;
+    service = new CartService(mockCartRepo, mockMenuRepo);
   });
 
   it('should throw 400 when quantity is 0 or negative', async () => {
@@ -137,8 +137,9 @@ describe('CartService.updateCartItem', () => {
   beforeEach(() => {
     MockedCartRepository.mockClear();
     MockedMenuRepository.mockClear();
-    service = new CartService();
-    mockCartRepo = MockedCartRepository.mock.instances[0] as jest.Mocked<CartRepository>;
+    mockCartRepo = new MockedCartRepository() as any;
+    const mockMenuRepo = new MockedMenuRepository() as any;
+    service = new CartService(mockCartRepo, mockMenuRepo);
   });
 
   it('should delete item when quantity is set to 0', async () => {

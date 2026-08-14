@@ -1,12 +1,11 @@
 import { injectable } from 'tsyringe';
 import { Request, Response, NextFunction } from 'express';
-import { container } from 'tsyringe';
 import { AuditService } from './audit.service';
 import { AuditActorType, AuditAction, AuditStatus } from './audit.constants';
 
 @injectable()
 export class AuditController {
-  private auditService = container.resolve(AuditService);
+  constructor(private auditService: AuditService) {}
   getAuditLogs = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page = parseInt(req.query.page as string) || 1;

@@ -58,7 +58,7 @@ describe('OrderService.cancelOrder', () => {
     const cartRepo = new MockedCartRepository() as any;
     const loyaltySvc = new MockedLoyaltyService({} as any, {} as any) as any;
     const walletSvc = new MockedWalletService({} as any, {} as any, {} as any) as any;
-    const notifSvc = new MockedNotificationService() as any;
+    const notifSvc = new MockedNotificationService({} as any) as any;
     
     service = new OrderService(orderRepo, cartRepo, loyaltySvc, walletSvc, notifSvc);
     mockOrderRepo = orderRepo;
@@ -137,7 +137,7 @@ describe('OrderService.updateOrderStatus — Barista branch check', () => {
     const cartRepo = new MockedCartRepository() as any;
     const loyaltySvc = new MockedLoyaltyService({} as any, {} as any) as any;
     const walletSvc = new MockedWalletService({} as any, {} as any, {} as any) as any;
-    const notifSvc = new MockedNotificationService() as any;
+    const notifSvc = new MockedNotificationService({} as any) as any;
     
     service = new OrderService(orderRepo, cartRepo, loyaltySvc, walletSvc, notifSvc);
     mockOrderRepo = orderRepo;
