@@ -57,10 +57,8 @@ describe('Vulnerability Tests via Real HTTP Requests', () => {
       .set('Authorization', 'Bearer fake-token')
       .send({ is_available: false });
 
-    // If the vulnerability exists, the controller won't return 403 Forbidden
-    // It will proceed to the service and might return 404/500 depending on DB mock
-    // But it definitely won't be 403!
+    // The vulnerability is now FIXED, so it should return 403 Forbidden!
     console.log("Proof 2: Branch Manager attacking another branch returned HTTP " + res.status);
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(403);
   });
 });
