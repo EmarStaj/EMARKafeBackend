@@ -93,7 +93,11 @@ export class AuthController {
   getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // User is already attached by requireAuth middleware
-      sendSuccess(res, { user: req.user }, 'Current user retrieved successfully.');
+      const role = req.profile?.role || 'customer';
+      sendSuccess(res, { 
+        user: { ...req.user, role },
+        profile: req.profile 
+      }, 'Current user retrieved successfully.');
     } catch (error) {
       next(error);
     }
