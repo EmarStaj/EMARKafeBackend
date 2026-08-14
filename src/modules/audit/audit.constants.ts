@@ -50,7 +50,12 @@ export const AuditAction = {
   ORDER_CANCEL: 'order_cancel',
 
   // QR / Checkout
-  QR_SCAN: 'qr_scan'
+  QR_SCAN: 'qr_scan',
+
+  // Staff Management (RBAC Method A)
+  STAFF_CREATE: 'staff_create',
+  STAFF_UPDATE: 'staff_update',
+  STAFF_DELETE: 'staff_delete'
 } as const;
 
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];

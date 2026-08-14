@@ -117,7 +117,7 @@ async function runExhaustiveMatrix() {
   console.log('👤 Test hesapları oluşturuluyor ve token alınıyor...');
   const customer = await createOrGetTestUser('customer', 1);
   const barista = await createOrGetTestUser('barista', 1);
-  const manager = await createOrGetTestUser('manager', 1);
+  const manager = await createOrGetTestUser('branch_manager', 1);
   const admin = await createOrGetTestUser('admin', 1);
 
   // Get a sample product and branch from DB
@@ -232,9 +232,9 @@ async function runExhaustiveMatrix() {
     .send({ amount: 999999999 });
   recordResult('Wallet', 'Customer', 'POST /api/wallet/topup', 'Maksimum işlem limitini aşan yükleme (>50.000 TL)', 400, res.status);
 
-  // Get Wallet QR Token
+  // Get Wallet QR Token with Empty Cart (Edge Case)
   res = await request(app).get('/api/wallet/qr').set('Authorization', `Bearer ${customer.token}`);
-  recordResult('Wallet', 'Customer', 'GET /api/wallet/qr', 'Ödeme için dinamik cüzdan QR token üretme', 200, res.status);
+  recordResult('Wallet', 'Customer', 'GET /api/wallet/qr', 'Boş sepetle QR token üretme denemesi (Uç Durum)', 400, res.status);
 
   // -------------------------------------------------------------------------
   // MODÜL 3: CATALOG, MENU & CATEGORIES
@@ -275,6 +275,10 @@ async function runExhaustiveMatrix() {
     .set('Authorization', `Bearer ${customer.token}`)
     .send({ product_id: testProductId, quantity: 2 });
   recordResult('Cart', 'Customer', 'POST /api/cart', 'Sepete ürün ekleme (2 Adet)', [200, 201], res.status);
+
+  // Get Wallet QR Token with Populated Cart
+  res = await request(app).get('/api/wallet/qr').set('Authorization', `Bearer ${customer.token}`);
+  recordResult('Wallet', 'Customer', 'GET /api/wallet/qr', 'Sepette ürün varken dinamik ödeme QR tokenı üretme', 200, res.status);
 
   // Add Item - Invalid Quantity (0)
   res = await request(app)
@@ -476,6 +480,70 @@ async function runExhaustiveMatrix() {
   // Admin views App Settings (200 expected)
   res = await request(app).get('/api/app-settings').set('Authorization', `Bearer ${admin.token}`);
   recordResult('RBAC Security', 'Admin', 'GET /api/app-settings', 'Admin yetkisiyle sistem ayarlarını getirme', 200, res.status);
+
+  // -------------------------------------------------------------------------
+  // MODÜL 10: METHOD A - STAFF & PERSONEL YÖNETİMİ
+  // -------------------------------------------------------------------------
+  console.log('\n--- [10. METHOD A - PERSONEL YÖNETİMİ (STAFF) TESTLERİ] ---');
+
+  // Customer tries to create staff (403 expected)
+  res = await request(app)
+    .post('/api/staff')
+    .set('Authorization', `Bearer ${customer.token}`)
+    .send({
+      email: 'illegal.barista@kafe.com',
+      password: 'Password123!',
+      full_name: 'Illegal Barista',
+      role: 'barista',
+      branch_id: testBranchId,
+    });
+  recordResult('Staff (Method A)', 'Customer', 'POST /api/staff', 'Müşterinin personel hesabı açmaya çalışması', 403, res.status);
+
+  // Branch Manager tries to create an Admin (403 expected)
+  res = await request(app)
+    .post('/api/staff')
+    .set('Authorization', `Bearer ${manager.token}`)
+    .send({
+      email: 'hacker.admin@kafe.com',
+      password: 'Password123!',
+      full_name: 'Hacker Admin',
+      role: 'admin',
+    });
+  recordResult('Staff (Method A)', 'Manager', 'POST /api/staff', 'Müdürün yetkisiz Admin hesabı açmaya çalışması', 403, res.status);
+
+  // Branch Manager creates Barista for own branch (201 expected)
+  const newBaristaEmail = `sube.barista.${Date.now()}@emarkafe.test`;
+  res = await request(app)
+    .post('/api/staff')
+    .set('Authorization', `Bearer ${manager.token}`)
+    .send({
+      email: newBaristaEmail,
+      password: 'Password123!',
+      full_name: 'Şube Baristası',
+      role: 'barista',
+      branch_id: testBranchId,
+    });
+  recordResult('Staff (Method A)', 'Manager', 'POST /api/staff', 'Şube müdürünün kendi şubesine barista eklemesi', 201, res.status);
+  const createdBaristaId = res.body?.data?.id;
+
+  // Admin lists all staff (200 expected)
+  res = await request(app).get('/api/staff').set('Authorization', `Bearer ${admin.token}`);
+  recordResult('Staff (Method A)', 'Admin', 'GET /api/staff', 'Admin yetkisiyle tüm personelleri listeleme', 200, res.status);
+
+  if (createdBaristaId) {
+    // Admin updates staff role (200 expected)
+    res = await request(app)
+      .patch(`/api/staff/${createdBaristaId}`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ role: 'branch_manager' });
+    recordResult('Staff (Method A)', 'Admin', 'PATCH /api/staff/:id', 'Admin yetkisiyle personel rolünü yükseltme/güncelleme', 200, res.status);
+
+    // Admin deletes created test staff (200 expected)
+    res = await request(app)
+      .delete(`/api/staff/${createdBaristaId}`)
+      .set('Authorization', `Bearer ${admin.token}`);
+    recordResult('Staff (Method A)', 'Admin', 'DELETE /api/staff/:id', 'Admin yetkisiyle personel hesabını silme', 200, res.status);
+  }
 
   console.log('\n========================================================================');
   const total = results.length;

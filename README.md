@@ -70,6 +70,11 @@
 | **Favoriler** | `GET /api/favorites` | Favori ürünleri listeleme | 🔒 `customer` |
 | | `POST /api/favorites` | Favorilere ürün ekleme | 🔒 `customer` |
 | | `DELETE /api/favorites/:productId` | Favorilerden ürün çıkarma | 🔒 `customer` |
+| **Personel (Method A)** | `POST /api/staff` *(veya `/api/admin/staff`)* | Yeni personel (Barista, Müdür, Admin) hesabı oluşturma | 🔒 `admin`, `branch_manager` |
+| | `GET /api/staff` | Personel listesi (Şube/Rol filtreli) | 🔒 `admin`, `branch_manager` |
+| | `GET /api/staff/:id` | Personel detay bilgisi | 🔒 `admin`, `branch_manager` |
+| | `PATCH /api/staff/:id` | Personel rolünü veya şubesini güncelleme | 🔒 `admin` |
+| | `DELETE /api/staff/:id` | Personel hesabını silme / çıkarma | 🔒 `admin` |
 | **Yönetim & Ayarlar** | `GET /api/settings` *(veya `/api/app-settings`)* | Uygulama konfigürasyonu | Public |
 | | `PUT /api/settings/:key` | Sistem ayarı güncelleme (Bakım modu vb.) | 🔒 `admin` |
 | | `GET /api/audit-logs` *(veya `/api/audit`)* | Denetim ve güvenlik logları | 🔒 `admin` |

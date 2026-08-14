@@ -12,7 +12,9 @@ export const requireRole = (allowedRoles: ('customer' | 'barista' | 'branch_mana
         throw new AppError('Unauthorized: User profile not loaded.', 401);
       }
 
-      const hasRole = allowedRoles.includes(req.profile.role);
+      const currentRole = req.profile.role;
+      const normalizedRole = (currentRole as string) === 'manager' ? 'branch_manager' : currentRole;
+      const hasRole = allowedRoles.includes(currentRole as any) || allowedRoles.includes(normalizedRole as any);
       if (!hasRole) {
         throw new AppError('Forbidden: You do not have permission to perform this action.', 403);
       }

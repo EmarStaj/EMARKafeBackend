@@ -33,6 +33,7 @@ import notificationRoutes from './modules/notification/notification.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import auditRoutes from './modules/audit/audit.routes';
+import staffRoutes from './modules/staff/staff.routes';
 
 dotenv.config();
 
@@ -139,6 +140,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/app-settings', settingsRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/admin/staff', staffRoutes);
 
 // Fallback for undefined routes (404)
 app.all('*', (req: Request, _res: Response, next: NextFunction) => {

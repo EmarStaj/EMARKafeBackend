@@ -10,7 +10,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
-    "test:e2e": "jest --config jest.e2e.config.ts"
+    "test:e2e": "jest --config jest.e2e.config.ts",
+    "seed:admin": "ts-node src/scripts/seed_admin.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.1",
