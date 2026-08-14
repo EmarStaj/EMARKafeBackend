@@ -25,6 +25,11 @@ lerna-debug.log*
 .env.production.local
 .env*.local
 
+# Temporary / Scratch test scripts
+test-*.js
+test_*.js
+*.scratch.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
