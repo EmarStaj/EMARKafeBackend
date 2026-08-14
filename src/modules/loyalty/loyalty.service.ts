@@ -27,6 +27,14 @@ export class LoyaltyService {
     }
   }
 
+  async getLoyaltySummary(userId: string) {
+    const [progress, rewards] = await Promise.all([
+      this.getLoyaltyProgress(userId),
+      this.getLoyaltyRewards(userId),
+    ]);
+    return { progress, rewards };
+  }
+
   /**
    * Process stamp accumulation for completed purchases.
    * Generates rewards if the threshold (usually 4 stamps) is reached.

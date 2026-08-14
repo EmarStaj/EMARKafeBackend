@@ -10,6 +10,7 @@ const controller = container.resolve(LoyaltyController);
 router.use(requireAuth);
 router.use(requireRole(['customer']));
 
+router.get('/', controller.getLoyaltySummary);
 router.get('/progress', controller.getLoyaltyProgress);
 router.get('/rewards', controller.getLoyaltyRewards);
 

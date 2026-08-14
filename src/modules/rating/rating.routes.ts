@@ -8,12 +8,21 @@ import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
 const controller = container.resolve(RatingController);
+
 // Zod Validation Schemas
-const rateProductSchema = z.object({
+const rateProductParamSchema = z.object({
   params: z.object({
     productId: z.string({ required_error: 'Product ID is required' }).uuid('Invalid Product UUID format'),
   }),
   body: z.object({
+    order_id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid Order UUID format'),
+    rating: z.number({ required_error: 'Rating is required' }).int().min(1, 'Rating must be at least 1').max(5, 'Rating cannot exceed 5'),
+  }),
+});
+
+const rateProductBodySchema = z.object({
+  body: z.object({
+    product_id: z.string({ required_error: 'Product ID is required' }).uuid('Invalid Product UUID format'),
     order_id: z.string({ required_error: 'Order ID is required' }).uuid('Invalid Order UUID format'),
     rating: z.number({ required_error: 'Rating is required' }).int().min(1, 'Rating must be at least 1').max(5, 'Rating cannot exceed 5'),
   }),
@@ -24,7 +33,15 @@ router.post(
   '/products/:productId/ratings',
   requireAuth,
   requireRole(['customer']),
-  validate(rateProductSchema),
+  validate(rateProductParamSchema),
+  controller.rateProduct
+);
+
+router.post(
+  '/',
+  requireAuth,
+  requireRole(['customer']),
+  validate(rateProductBodySchema),
   controller.rateProduct
 );
 

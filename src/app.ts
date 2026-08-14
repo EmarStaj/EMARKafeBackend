@@ -136,7 +136,9 @@ app.use('/api/device-tokens', deviceTokenRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/app-settings', settingsRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Fallback for undefined routes (404)
 app.all('*', (req: Request, _res: Response, next: NextFunction) => {
