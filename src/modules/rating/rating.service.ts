@@ -67,12 +67,10 @@ export class RatingService {
         rating
       });
 
-      // 5. Sync product average ratings cache
-      const stats = await this.ratingRepository.updateProductStats(productId);
-
+      // Database trigger automatically updates average rating and count on products table.
       return {
         ratingRecord,
-        stats
+        stats: null // Omitted since DB handles it now
       };
     } catch (error: any) {
       throw new AppError(error.message || 'Failed to submit rating.', 400);

@@ -71,26 +71,4 @@ export class RatingRepository {
     return data;
   }
 
-  /**
-   * Recalculates average rating and review counts on public.products table.
-   */
-  async updateProductStats(productId: string) {
-    const { data: ratings, error: selectError } = await supabaseAdmin
-      .from('product_ratings')
-      .select('rating')
-      .eq('product_id', productId);
-
-    if (selectError) throw selectError;
-
-    const count = ratings ? ratings.length : 0;
-    const avg = count > 0 ? ratings!.reduce((sum, r) => sum + r.rating, 0) / count : 0;
-
-    const { error: updateError } = await supabaseAdmin
-      .from('products')
-      .update({ avg_rating: avg, rating_count: count })
-      .eq('id', productId);
-
-    if (updateError) throw updateError;
-    return { avg, count };
-  }
 }
