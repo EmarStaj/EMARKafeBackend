@@ -31,4 +31,16 @@ export class LoyaltyController {
       next(error);
     }
   };
+
+  getLoyaltySummary = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) throw new AppError('Unauthorized', 401);
+
+      const summary = await this.loyaltyService.getLoyaltySummary(userId);
+      sendSuccess(res, summary, 'Loyalty summary retrieved successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
 }

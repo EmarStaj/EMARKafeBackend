@@ -107,7 +107,7 @@ export class OrderService {
     // 4.5. Check wallet balance BEFORE creating the order (BUG-04)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('wallet_balance')
+      .select('balance')
       .eq('id', userId)
       .single();
 
@@ -115,8 +115,8 @@ export class OrderService {
       throw new AppError('Failed to fetch user wallet balance.', 400);
     }
 
-    if (Number(profile.wallet_balance) < totalPrice) {
-      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but your balance is ${profile.wallet_balance} TL.`, 402);
+    if (Number(profile.balance) < totalPrice) {
+      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but your balance is ${profile.balance} TL.`, 402);
     }
 
     try {
@@ -217,10 +217,10 @@ export class OrderService {
       });
     }
 
-    // 3.5 Check wallet balance BEFORE creating the order (BUG-04)
+    // 5. Check wallet balance
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('wallet_balance')
+      .select('balance')
       .eq('id', customerId)
       .single();
 
@@ -228,8 +228,8 @@ export class OrderService {
       throw new AppError('Failed to fetch customer wallet balance.', 400);
     }
 
-    if (Number(profile.wallet_balance) < totalPrice) {
-      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but balance is ${profile.wallet_balance} TL.`, 402);
+    if (Number(profile.balance) < totalPrice) {
+      throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but balance is ${profile.balance} TL.`, 402);
     }
 
     try {

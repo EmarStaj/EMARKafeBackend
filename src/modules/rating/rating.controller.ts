@@ -16,8 +16,11 @@ export class RatingController {
         throw new AppError('Unauthorized', 401);
       }
 
-      const { productId } = req.params;
+      const productId = req.params.productId || req.body.product_id;
       const { order_id, rating } = req.body;
+      if (!productId) {
+        throw new AppError('Product ID is required', 400);
+      }
 
       const data = await this.ratingService.rateProduct(
         userId,
