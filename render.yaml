@@ -16,10 +16,20 @@ services:
         value: 10000
       - key: SUPABASE_URL
         sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: ONESIGNAL_APP_ID
+        sync: false
+      - key: ONESIGNAL_REST_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
       - key: ADMIN_EMAIL
         value: admin@emarkafe.com
       - key: ADMIN_PASSWORD
