@@ -77,27 +77,7 @@ app.use(cors({
 // HTTP request logging — structured JSON in prod, colorized in dev
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
-// Global rate limiter — 100 requests per 15 minutes per IP
-app.use(globalRateLimiter);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Force Content-Type: application/json for POST, PUT, PATCH
-app.use((req: Request, res: Response, next: NextFunction): void => {
-  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-    if (!req.is('application/json') && !req.is('multipart/form-data')) {
-      res.status(415).json({
-        success: false,
-        message: 'Unsupported Media Type: Only application/json is allowed'
-      });
-      return;
-    }
-  }
-  next();
-});
-
-// Health Check Endpoint — includes DB connectivity test
+// Health Check Endpoint — includes DB connectivity test (MUST be before rate limiter so Render health checks never get 429)
 app.get('/health', async (_req: Request, res: Response) => {
   let dbStatus = 'ok';
   try {
@@ -118,8 +98,28 @@ app.get('/health', async (_req: Request, res: Response) => {
   });
 });
 
-// Swagger API Documentation UI
+// Swagger API Documentation UI (exempt from rate limit)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Global rate limiter — applies only to /api routes (100 requests per 15 minutes per IP)
+app.use('/api', globalRateLimiter);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Force Content-Type: application/json for POST, PUT, PATCH
+app.use((req: Request, res: Response, next: NextFunction): void => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    if (!req.is('application/json') && !req.is('multipart/form-data')) {
+      res.status(415).json({
+        success: false,
+        message: 'Unsupported Media Type: Only application/json is allowed'
+      });
+      return;
+    }
+  }
+  next();
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);

@@ -29,6 +29,7 @@ export const globalRateLimiter = isRateLimitEnabled
       max: 100,
       standardHeaders: true,
       legacyHeaders: false,
+      skip: (req: Request) => req.path === '/health' || req.originalUrl === '/health' || req.path.startsWith('/api-docs'),
       message: {
         success: false,
         message: 'Too many requests from this IP. Please try again after 15 minutes.',
