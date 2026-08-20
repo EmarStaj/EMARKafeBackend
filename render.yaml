@@ -23,6 +23,8 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
         value: "*"
       - key: ONESIGNAL_APP_ID
         sync: false

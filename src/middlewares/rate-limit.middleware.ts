@@ -1,15 +1,13 @@
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import Redis from 'ioredis';
 import { Request, Response, NextFunction } from 'express';
+import { redis as redisClient } from '../config/redis';
 
 const isRateLimitEnabled = process.env.RATE_LIMIT_ENABLED !== 'false';
 
-// Initialize Redis client if URL is provided
-const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : undefined;
-
+// The Redis Client is imported directly from our centralized config.
 if (redisClient) {
-  redisClient.on('error', (err) => console.error('Redis Client Error', err));
+  // Error handling is already managed in config/redis.ts
 }
 
 // No-op middleware that just passes through
