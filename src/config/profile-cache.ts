@@ -23,9 +23,10 @@ export class ProfileCache {
       const data = await redis.get(this.prefix + userId);
       if (!data) return null;
       return JSON.parse(data) as UserProfile;
-    } catch (error) {
-      logger.error(`Error reading profile from Redis for user ${userId}:`, error);
-      return null; // Fail open
+    } catch (error: any) {
+      // Sadece debug log atalım, konsol kirlenmesin
+      logger.debug(`Profile cache skip (Redis unavailable) for user ${userId}: ${error.message}`);
+      return null; // Fail open (DB'ye gider)
     }
   }
 
@@ -35,8 +36,8 @@ export class ProfileCache {
   async set(userId: string, profile: UserProfile): Promise<void> {
     try {
       await redis.setex(this.prefix + userId, this.ttlSeconds, JSON.stringify(profile));
-    } catch (error) {
-      logger.error(`Error writing profile to Redis for user ${userId}:`, error);
+    } catch (error: any) {
+      logger.debug(`Profile cache set skip (Redis unavailable) for user ${userId}: ${error.message}`);
     }
   }
 

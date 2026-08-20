@@ -18,7 +18,7 @@ const createStaffSchema = z.object({
     role: z.enum(['barista', 'branch_manager', 'admin'], {
       required_error: 'Role must be one of: barista, branch_manager, admin',
     }),
-    branch_id: z.string().uuid('Invalid branch UUID format').optional(),
+    branch_id: z.string().uuid('Invalid branch UUID format').nullable().optional().or(z.literal('')),
     phone: z.string().optional(),
   }),
 });
@@ -30,7 +30,7 @@ const updateStaffSchema = z.object({
   body: z.object({
     full_name: z.string().min(2).optional(),
     role: z.enum(['barista', 'branch_manager', 'admin']).optional(),
-    branch_id: z.string().uuid().nullable().optional(),
+    branch_id: z.string().uuid().nullable().optional().or(z.literal('')),
     phone: z.string().optional(),
   }),
 });

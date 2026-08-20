@@ -9,8 +9,11 @@ export const redis = new Redis(redisUrl, {
   connectTimeout: 2000,
   maxRetriesPerRequest: 1,
   retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
+    if (times > 2) {
+      logger.warn('Redis retry limit reached. Disabling Redis for this instance.');
+      return null; // Stop retrying
+    }
+    return Math.min(times * 100, 2000);
   },
 });
 
