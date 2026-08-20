@@ -66,6 +66,9 @@ app.use(cors({
     if (!isProduction) return callback(null, true);
     // Production with whitelist: check origin
     if (allowedOrigins.length > 0) {
+      // If wildcard '*' is in the list, allow all origins
+      if (allowedOrigins.includes('*')) return callback(null, true);
+      // Otherwise strictly match the origin
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
     }
