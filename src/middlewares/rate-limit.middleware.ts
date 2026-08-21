@@ -3,12 +3,9 @@ import RedisStore from 'rate-limit-redis';
 import { Request, Response, NextFunction } from 'express';
 import { redis as redisClient } from '../config/redis';
 
-const isRateLimitEnabled = process.env.RATE_LIMIT_ENABLED !== 'false';
-
-// The Redis Client is imported directly from our centralized config.
-if (redisClient) {
-  // Error handling is already managed in config/redis.ts
-}
+const isTest = process.env.NODE_ENV === 'test';
+const isRateLimitEnabled = !isTest && process.env.RATE_LIMIT_ENABLED !== 'false';
+const useRedisStore = !isTest && !!process.env.REDIS_URL && !!redisClient;
 
 // No-op middleware that just passes through
 const noopMiddleware = (_req: Request, _res: Response, next: NextFunction) => next();
@@ -16,11 +13,11 @@ const noopMiddleware = (_req: Request, _res: Response, next: NextFunction) => ne
 /**
  * Global rate limiter — applies to all API endpoints.
  * Allows 100 requests per 15 minutes per IP.
- * Disabled when RATE_LIMIT_ENABLED=false
+ * Disabled when RATE_LIMIT_ENABLED=false or in test mode.
  */
 export const globalRateLimiter = isRateLimitEnabled
   ? rateLimit({
-      store: redisClient ? new RedisStore({
+      store: useRedisStore ? new RedisStore({
         sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as any,
       }) : undefined,
       windowMs: 15 * 60 * 1000,
@@ -39,11 +36,11 @@ export const globalRateLimiter = isRateLimitEnabled
 /**
  * Strict auth rate limiter — applies to login and register endpoints.
  * Allows 10 requests per 15 minutes per IP to prevent brute-force attacks.
- * Disabled when RATE_LIMIT_ENABLED=false
+ * Disabled when RATE_LIMIT_ENABLED=false or in test mode.
  */
 export const authRateLimiter = isRateLimitEnabled
   ? rateLimit({
-      store: redisClient ? new RedisStore({
+      store: useRedisStore ? new RedisStore({
         sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as any,
       }) : undefined,
       windowMs: 15 * 60 * 1000,
