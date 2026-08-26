@@ -24,8 +24,9 @@ export class MenuController {
       
       const search = req.query.search as string | undefined;
       const categoryId = req.query.category_id as string | undefined;
+      const branchId = req.query.branch_id as string | undefined;
 
-      const items = await this.menuService.getAllItems(onlyActive, search, categoryId);
+      const items = await this.menuService.getAllItems(onlyActive, search, categoryId, branchId);
       sendSuccess(res, items, 'Products retrieved successfully.');
     } catch (error) {
       next(error);

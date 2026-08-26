@@ -17,7 +17,18 @@ export class MenuRepository {
   /**
    * Fetch all active products (menu items), joined with category information.
    */
-  async getAllItems(onlyActive = true, search?: string, categoryId?: string) {
+  async getAllItems(onlyActive = true, search?: string, categoryId?: string, branchId?: string) {
+
+    let allowedProductIds: string[] | null = null;
+    if (branchId) {
+      const { data: bp } = await supabaseAdmin
+        .from('branch_products')
+        .select('product_id')
+        .eq('branch_id', branchId)
+        .eq('is_available', true);
+      allowedProductIds = (bp || []).map((b: any) => b.product_id);
+      if (allowedProductIds.length === 0) return [];
+    }
     let query = supabaseAdmin
       .from('products')
       .select(`
@@ -42,6 +53,7 @@ export class MenuRepository {
       query = query.eq('is_active', true);
     }
 
+    if (allowedProductIds) { query = query.in('id', allowedProductIds); }
     if (categoryId) {
       query = query.eq('category_id', categoryId);
     }
@@ -75,6 +87,17 @@ export class MenuRepository {
         categories (
           id,
           name
+        ),
+        product_options (
+          id,
+          name,
+          is_required,
+          is_multi_select,
+          product_option_values (
+            id,
+            label,
+            price_delta
+          )
         ),
         product_options (
           id,

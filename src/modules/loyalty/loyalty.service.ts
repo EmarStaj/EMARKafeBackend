@@ -67,16 +67,14 @@ export class LoyaltyService {
         await this.loyaltyRepository.createReward(userId, categoryId);
       }
 
-      if (quantity > 0) {
-        logger.info(`Added ${quantity} stamps for user ${userId}`);
-        
-        // Push notification for loyalty points
-        this.notificationService.sendToUser(
-          userId,
-          'Tebrikler! Puan Kazandınız 🎁',
-          `Siparişinizden ${quantity} kahve puanı kazandınız. Toplam puanınızı cüzdanınızdan görebilirsiniz.`
-        );
-      }
+      logger.info(`Added ${quantity} stamps for user ${userId}`);
+      
+      // Push notification for loyalty points
+      this.notificationService.sendToUser(
+        userId,
+        'Tebrikler! Puan Kazandınız 🎁',
+        `Siparişinizden ${quantity} kahve puanı kazandınız. Toplam puanınızı cüzdanınızdan görebilirsiniz.`
+      );
 
       return {
         stampsAdded: quantity,

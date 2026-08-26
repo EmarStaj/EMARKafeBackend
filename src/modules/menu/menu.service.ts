@@ -12,8 +12,8 @@ export class MenuService {
     @inject(MenuRepository) private menuRepository: MenuRepository
   ) {}
 
-  async getAllItems(onlyActive = true, search?: string, categoryId?: string) {
-    const isFiltered = !!search || !!categoryId;
+  async getAllItems(onlyActive = true, search?: string, categoryId?: string, branchId?: string) {
+    const isFiltered = !!search || !!categoryId || !!branchId;
     const cacheKey = `menu:all:${onlyActive}`;
     
     // Bypass cache if there are search or category filters to prevent explosion of cache keys
@@ -29,7 +29,7 @@ export class MenuService {
     }
 
     try {
-      const items = await this.menuRepository.getAllItems(onlyActive, search, categoryId);
+      const items = await this.menuRepository.getAllItems(onlyActive, search, categoryId, branchId);
       
       if (!isFiltered) {
         try {
