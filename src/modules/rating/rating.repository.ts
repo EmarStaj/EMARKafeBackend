@@ -26,7 +26,7 @@ export class RatingRepository {
       .eq('orders.status', 'completed'); // Only allow rating completed orders
 
     if (error) throw error;
-    return data && data.length > 0;
+    return !!(data && data.length > 0);
   }
 
   /**

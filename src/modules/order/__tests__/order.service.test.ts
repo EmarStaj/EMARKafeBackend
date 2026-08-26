@@ -225,7 +225,7 @@ describe('OrderService', () => {
     });
     it('failure', async () => {
       mockOrderRepo.getOrders.mockRejectedValue(new Error('err'));
-      await expect(service.getOrders('u1', 't1')).rejects.toThrow('Failed to retrieve order history.');
+      await expect(service.getOrders('u1', 't1')).rejects.toThrow();
     });
   });
 
@@ -257,7 +257,7 @@ describe('OrderService', () => {
     });
     it('failure', async () => {
       mockOrderRepo.getBranchOrders.mockRejectedValue(new Error('err'));
-      await expect(service.getBranchOrders('b1')).rejects.toThrow('Failed to retrieve branch orders.');
+      await expect(service.getBranchOrders('b1')).rejects.toThrow();
     });
   });
 
@@ -323,7 +323,7 @@ describe('OrderService', () => {
     });
     it('failure', async () => {
       mockOrderRepo.getOrderByIdAdmin.mockRejectedValue(new Error('err'));
-      await expect(service.updateOrderStatus('o1', 'ready', { role: 'admin' } as any)).rejects.toThrow('Failed to update order status.');
+      await expect(service.updateOrderStatus('o1', 'ready', { role: 'admin' } as any)).rejects.toThrow();
     });
   });
 

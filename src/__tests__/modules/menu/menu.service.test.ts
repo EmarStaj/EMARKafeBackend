@@ -47,7 +47,7 @@ describe('MenuService Unit Tests', () => {
 
       const result = await menuService.getAllItems(true);
 
-      expect(mockMenuRepository.getAllItems).toHaveBeenCalledWith(true, undefined, undefined);
+      expect(mockMenuRepository.getAllItems).toHaveBeenCalledWith(true, undefined, undefined, undefined);
       expect(redis.setex).toHaveBeenCalledWith('menu:all:true', 3600, JSON.stringify(mockItems));
       expect(result).toEqual(mockItems);
     });
@@ -59,7 +59,7 @@ describe('MenuService Unit Tests', () => {
       const result = await menuService.getAllItems(true, 'latte');
 
       expect(redis.get).not.toHaveBeenCalled();
-      expect(mockMenuRepository.getAllItems).toHaveBeenCalledWith(true, 'latte', undefined);
+      expect(mockMenuRepository.getAllItems).toHaveBeenCalledWith(true, 'latte', undefined, undefined);
       expect(result).toEqual(mockItems);
     });
   });

@@ -68,8 +68,8 @@ describe('OrderController', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(201);
     expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({
-      action: 'QR_SCAN',
-      status: 'SUCCESS',
+      action: 'qr_scan',
+      status: 'success',
     }));
   });
 
@@ -87,7 +87,7 @@ describe('OrderController', () => {
     await controller.scanQRAndCheckout(mockReq as Request, mockRes as Response, mockNext);
 
     expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'FAILURE',
+      status: 'failure',
     }));
     expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
   });
@@ -170,7 +170,7 @@ describe('OrderController', () => {
     await controller.updateOrderStatus(mockReq as Request, mockRes as Response, mockNext);
 
     expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'SUCCESS' }));
+    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'success' }));
   });
 
   it('updateOrderStatus unauthorized', async () => {
@@ -185,7 +185,7 @@ describe('OrderController', () => {
 
     await controller.updateOrderStatus(mockReq as Request, mockRes as Response, mockNext);
 
-    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'FAILURE' }));
+    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'failure' }));
     expect(mockNext).toHaveBeenCalled();
   });
 
@@ -196,7 +196,7 @@ describe('OrderController', () => {
     await controller.cancelOrder(mockReq as Request, mockRes as Response, mockNext);
 
     expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'SUCCESS' }));
+    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'success' }));
   });
 
   it('cancelOrder unauthorized no user', async () => {
@@ -217,7 +217,7 @@ describe('OrderController', () => {
 
     await controller.cancelOrder(mockReq as Request, mockRes as Response, mockNext);
 
-    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'FAILURE' }));
+    expect(mockAuditService.logEvent).toHaveBeenCalledWith(expect.objectContaining({ status: 'failure' }));
     expect(mockNext).toHaveBeenCalled();
   });
 });

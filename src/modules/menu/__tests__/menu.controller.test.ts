@@ -40,7 +40,7 @@ describe('MenuController', () => {
     it('should get active items by default', async () => {
       menuService.getAllItems.mockResolvedValue([{ id: '1' }] as any);
       await controller.getAllItems(req as Request, res as Response, next);
-      expect(menuService.getAllItems).toHaveBeenCalledWith(true, undefined, undefined);
+      expect(menuService.getAllItems).toHaveBeenCalledWith(true, undefined, undefined, undefined);
       expect(sendSuccess).toHaveBeenCalledWith(res, [{ id: '1' }], 'Products retrieved successfully.');
     });
 
@@ -49,7 +49,7 @@ describe('MenuController', () => {
       req.profile = { role: 'admin' } as any;
       menuService.getAllItems.mockResolvedValue([{ id: '1' }] as any);
       await controller.getAllItems(req as Request, res as Response, next);
-      expect(menuService.getAllItems).toHaveBeenCalledWith(false, undefined, undefined);
+      expect(menuService.getAllItems).toHaveBeenCalledWith(false, undefined, undefined, undefined);
     });
 
     it('should get active items if onlyActive=false but user is customer', async () => {
@@ -57,14 +57,14 @@ describe('MenuController', () => {
       req.profile = { role: 'customer' } as any;
       menuService.getAllItems.mockResolvedValue([{ id: '1' }] as any);
       await controller.getAllItems(req as Request, res as Response, next);
-      expect(menuService.getAllItems).toHaveBeenCalledWith(true, undefined, undefined);
+      expect(menuService.getAllItems).toHaveBeenCalledWith(true, undefined, undefined, undefined);
     });
 
     it('should pass search and categoryId', async () => {
       req.query = { search: 'coffee', category_id: 'cat1' };
       menuService.getAllItems.mockResolvedValue([{ id: '1' }] as any);
       await controller.getAllItems(req as Request, res as Response, next);
-      expect(menuService.getAllItems).toHaveBeenCalledWith(true, 'coffee', 'cat1');
+      expect(menuService.getAllItems).toHaveBeenCalledWith(true, 'coffee', 'cat1', undefined);
     });
 
     it('should call next on error', async () => {

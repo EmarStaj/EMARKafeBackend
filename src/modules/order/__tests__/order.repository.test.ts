@@ -30,16 +30,6 @@ describe('OrderRepository', () => {
     jest.clearAllMocks();
   });
 
-  const mockQuerySuccess = (mockObj: any, data: any) => {
-    mockObj.single.mockResolvedValueOnce({ data, error: null });
-    mockObj.select.mockResolvedValueOnce({ data, error: null });
-  };
-
-  const mockQueryError = (mockObj: any, error: any) => {
-    mockObj.single.mockResolvedValueOnce({ data: null, error });
-    mockObj.select.mockResolvedValueOnce({ data: null, error });
-  };
-
   describe('createOrder', () => {
     it('creates an order with token', async () => {
       const mockOrder = { user_id: '1', branch_id: '2', total_price: 10, status: 'created' as any };

@@ -47,7 +47,7 @@ describe('MenuService', () => {
       const res = await service.getAllItems(true);
       
       expect(res).toEqual([{ id: '1' }]);
-      expect(repo.getAllItems).toHaveBeenCalledWith(true, undefined, undefined);
+      expect(repo.getAllItems).toHaveBeenCalledWith(true, undefined, undefined, undefined);
       expect(redis.setex).toHaveBeenCalledWith('menu:all:true', 3600, JSON.stringify([{ id: '1' }]));
     });
 

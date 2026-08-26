@@ -121,7 +121,7 @@ export class BranchRepository {
       return {
         product_id: prod.id,
         branch_id: branchId,
-        is_available: stockItem ? stockItem.is_available : false,
+        is_available: stockItem ? stockItem.is_available : true,
         updated_at: stockItem ? stockItem.updated_at : null,
         updated_by: stockItem ? stockItem.updated_by : null,
         products: prod
