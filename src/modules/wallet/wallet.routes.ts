@@ -16,9 +16,8 @@ const topupSchema = z.object({
   })
 });
 
-// All wallet endpoints require authentication and customer role
+// All wallet endpoints require authentication
 router.use(requireAuth);
-router.use(requireRole(['customer']));
 
 router.get('/balance', controller.getBalanceAndTransactions);
 router.post('/topup', validate(topupSchema), controller.topup);
