@@ -3,7 +3,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { WalletController } from './wallet.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
-import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
