@@ -9,9 +9,24 @@ const router = Router();
 const controller = container.resolve(ProfileController);
 
 // Zod Validation Schemas
+const sanitizeString = (val: string) =>
+  val
+    .replace(/<[^>]*>/g, '') // HTML tagları sil
+    .replace(/[&<>"'`]/g, c => ({ // HTML encode
+      '&': '&amp;', '<': '&lt;', '>': '&gt;',
+      '"': '&quot;', "'": '&#x27;', '`': '&#x60;'
+    }[c] || c))
+    .trim();
+
+const fullNameSchema = z.string()
+  .min(2, 'Ad en az 2 karakter')
+  .max(100, 'Ad en fazla 100 karakter')
+  .transform(sanitizeString)
+  .refine(val => val.length >= 2, 'Ad en az 2 karakter olmalı');
+
 const updateProfileSchema = z.object({
   body: z.object({
-    full_name: z.string().trim().max(100, 'Full name cannot exceed 100 characters').optional(),
+    full_name: fullNameSchema.optional(),
     email: z.string().email('Invalid email format').optional(),
     phone: z.string().regex(/^[0-9+\-\s]{10,15}$/, 'Invalid phone number format').optional().or(z.literal('')),
     birth_date: z.string()

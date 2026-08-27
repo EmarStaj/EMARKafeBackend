@@ -10,11 +10,26 @@ const router = Router();
 const controller = container.resolve(StaffController);
 
 // Zod Validation Schemas
+const sanitizeString = (val: string) =>
+  val
+    .replace(/<[^>]*>/g, '') // HTML tagları sil
+    .replace(/[&<>"'`]/g, c => ({ // HTML encode
+      '&': '&amp;', '<': '&lt;', '>': '&gt;',
+      '"': '&quot;', "'": '&#x27;', '`': '&#x60;'
+    }[c] || c))
+    .trim();
+
+const fullNameSchema = z.string()
+  .min(2, 'Ad en az 2 karakter')
+  .max(100, 'Ad en fazla 100 karakter')
+  .transform(sanitizeString)
+  .refine(val => val.length >= 2, 'Ad en az 2 karakter olmalı');
+
 const createStaffSchema = z.object({
   body: z.object({
     email: z.string({ required_error: 'Email is required' }).email('Invalid email address'),
     password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
-    full_name: z.string({ required_error: 'Full name is required' }).min(2, 'Name must be at least 2 characters'),
+    full_name: fullNameSchema,
     role: z.enum(['barista', 'branch_manager', 'admin'], {
       required_error: 'Role must be one of: barista, branch_manager, admin',
     }),
@@ -28,7 +43,7 @@ const updateStaffSchema = z.object({
     id: z.string({ required_error: 'Staff ID is required' }).uuid('Invalid user UUID format'),
   }),
   body: z.object({
-    full_name: z.string().min(2).optional(),
+    full_name: fullNameSchema.optional(),
     role: z.enum(['barista', 'branch_manager', 'admin']).optional(),
     branch_id: z.string().uuid().nullable().optional().or(z.literal('')),
     phone: z.string().optional(),
