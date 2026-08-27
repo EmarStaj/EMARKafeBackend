@@ -2,6 +2,7 @@ import { injectable } from 'tsyringe';
 import { supabase, supabaseAdmin } from '../../config/supabase';
 import { AppError } from '../../utils/app-error';
 import { profileCache } from '../../config/profile-cache';
+import { logger } from '../../config/logger';
 
 @injectable()
 export class AuthService {
@@ -60,11 +61,16 @@ export class AuthService {
 
   /**
    * Send a password reset email.
+   * Silently logs warnings if email service is rate-limited or fails, preventing user enumeration.
    */
   async forgotPassword(email: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      throw new AppError(error.message, 400);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        logger.warn(`Password reset email warning for ${email}: ${error.message}`);
+      }
+    } catch (err: any) {
+      logger.warn(`Unexpected error in forgotPassword for ${email}: ${err.message}`);
     }
   }
 

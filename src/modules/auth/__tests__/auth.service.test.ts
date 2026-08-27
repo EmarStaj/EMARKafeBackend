@@ -131,10 +131,10 @@ describe('AuthService', () => {
       expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('test@test.com');
     });
 
-    it('should throw AppError on error', async () => {
+    it('should handle error gracefully without throwing', async () => {
       (supabase.auth.resetPasswordForEmail as jest.Mock).mockResolvedValue({ error: { message: 'forgot error' } });
 
-      await expect(authService.forgotPassword('test@test.com')).rejects.toThrow(AppError);
+      await expect(authService.forgotPassword('test@test.com')).resolves.toBeUndefined();
     });
   });
 
