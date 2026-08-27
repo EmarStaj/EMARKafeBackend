@@ -293,12 +293,28 @@ describe('OrderService', () => {
       expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'preparing', expect.anything());
       expect(mockNotificationService.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('Hazırlanıyor'), expect.any(String));
     });
-    it('updates to cancelled', async () => {
-      mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({ branch_id: 'b1', status: 'created', user_id: 'u1' });
+    it('updates to cancelled and processes refund if total_price > 0', async () => {
+      mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({
+        id: 'o1', branch_id: 'b1', status: 'created', user_id: 'u1', total_price: 150, payment_status: 'paid'
+      });
+      (supabaseAdmin.rpc as jest.Mock).mockResolvedValue({ error: null });
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
+
       await service.updateOrderStatus('o1', 'cancelled', { role: 'admin' } as any);
+      expect(supabaseAdmin.rpc).toHaveBeenCalledWith('add_balance', { p_user_id: 'u1', p_amount: 150 });
       expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'cancelled', expect.anything());
       expect(mockNotificationService.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('İptal'), expect.any(String));
+    });
+
+    it('updates to cancelled and handles refund error gracefully', async () => {
+      mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({
+        id: 'o1', branch_id: 'b1', status: 'created', user_id: 'u1', total_price: 150, payment_status: 'paid'
+      });
+      (supabaseAdmin.rpc as jest.Mock).mockResolvedValue({ error: new Error('rpc fail') });
+      mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
+
+      await service.updateOrderStatus('o1', 'cancelled', { role: 'admin' } as any);
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'cancelled', expect.anything());
     });
     it('updates to completed', async () => {
       mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({

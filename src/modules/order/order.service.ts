@@ -6,6 +6,7 @@ import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import { supabaseAdmin } from '../../config/supabase';
 import { UserProfile } from '../../types';
 import { logger } from '../../config/logger';
+import { profileCache } from '../../config/profile-cache';
 import { WalletService } from '../wallet/wallet.service';
 import { NotificationService } from '../notification/notification.service';
 
@@ -372,6 +373,30 @@ export class OrderService {
         }
       }
 
+      // 4.5. If status is cancelled, refund customer wallet balance and record transaction
+      if (status === 'cancelled' && (order as any).payment_status !== 'refunded' && order.total_price > 0) {
+        try {
+          const { error: refundError } = await supabaseAdmin.rpc('add_balance', {
+            p_user_id: order.user_id,
+            p_amount: order.total_price
+          });
+
+          if (refundError) {
+            logger.error(`Failed to refund balance for order ${orderId}:`, refundError);
+          } else {
+            await supabaseAdmin.from('transactions').insert({
+              user_id: order.user_id,
+              amount: order.total_price,
+              type: 'refund',
+              order_id: orderId
+            });
+            await profileCache.invalidate(order.user_id);
+          }
+        } catch (e) {
+          logger.error(`Error processing refund for order ${orderId}:`, e);
+        }
+      }
+
       // 5. Trigger Real Push Notifications
       if (status === 'ready') {
         this.notificationService.sendToUser(
@@ -426,12 +451,13 @@ export class OrderService {
       }
 
       // Record the refund transaction (BUG-02)
-      await supabaseAdmin.from('wallet_transactions').insert({
+      await supabaseAdmin.from('transactions').insert({
         user_id: userId,
         amount: order.total_price,
         type: 'refund',
         order_id: order.id
       });
+      await profileCache.invalidate(userId);
 
       // Notify the user about cancellation
       this.notificationService.sendToUser(
