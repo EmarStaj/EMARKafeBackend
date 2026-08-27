@@ -39,7 +39,7 @@ export class LoyaltyService {
    * Process stamp accumulation for completed purchases.
    * Generates rewards if the threshold (usually 4 stamps) is reached.
    */
-  async addStampsForProduct(userId: string, categoryId: string, quantity: number) {
+  async addStampsForProduct(userId: string, categoryId: string, quantity: number, sendNotification: boolean = true) {
     if (quantity <= 0) {
       return { stampsAdded: 0, currentStamps: 0, rewardsEarned: 0 };
     }
@@ -69,12 +69,14 @@ export class LoyaltyService {
 
       logger.info(`Added ${quantity} stamps for user ${userId}`);
       
-      // Push notification for loyalty points
-      this.notificationService.sendToUser(
-        userId,
-        'Tebrikler! Puan Kazandınız 🎁',
-        `Siparişinizden ${quantity} kahve puanı kazandınız. Toplam puanınızı cüzdanınızdan görebilirsiniz.`
-      );
+      // Push notification for loyalty points (if enabled)
+      if (sendNotification) {
+        this.notificationService.sendToUser(
+          userId,
+          'Tebrikler! Puan Kazandınız 🎁',
+          `Siparişinizden ${quantity} kahve puanı kazandınız. Toplam puanınızı cüzdanınızdan görebilirsiniz.`
+        );
+      }
 
       return {
         stampsAdded: quantity,

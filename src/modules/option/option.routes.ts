@@ -42,13 +42,13 @@ const idParamSchema = z.object({
   }),
 });
 
-// Public Endpoints
-router.get('/products/:productId/options', validate(getOptionsSchema), controller.getProductOptions);
+// Public Endpoints (Supported at /api/options/products/:productId/options and /api/menu/products/:productId/options)
+router.get(['/products/:productId/options', '/:productId/options'], validate(getOptionsSchema), controller.getProductOptions);
 
 // Admin-only Endpoints (Option groups and values CRUD)
-router.post('/products/:productId/options', requireAuth, requireRole(['admin']), validate(createOptionSchema), controller.createOption);
-router.post('/options/:optionId/values', requireAuth, requireRole(['admin']), validate(createOptionValueSchema), controller.createOptionValue);
-router.delete('/options/:id', requireAuth, requireRole(['admin']), validate(idParamSchema), controller.deleteOption);
-router.delete('/options/values/:id', requireAuth, requireRole(['admin']), validate(idParamSchema), controller.deleteOptionValue);
+router.post(['/products/:productId/options', '/:productId/options'], requireAuth, requireRole(['admin']), validate(createOptionSchema), controller.createOption);
+router.post(['/:optionId/values', '/options/:optionId/values'], requireAuth, requireRole(['admin']), validate(createOptionValueSchema), controller.createOptionValue);
+router.delete(['/:id', '/options/:id'], requireAuth, requireRole(['admin']), validate(idParamSchema), controller.deleteOption);
+router.delete(['/values/:id', '/options/values/:id'], requireAuth, requireRole(['admin']), validate(idParamSchema), controller.deleteOptionValue);
 
 export default router;

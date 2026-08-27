@@ -304,8 +304,8 @@ export class OrderService {
       }));
       await this.orderRepository.createOrderItems(orderItems, baristaToken, true);
 
-      // 6. Clear the cart
-      await this.cartRepository.clearCart(cart.id);
+      // 6. Convert the cart (retains items for analytics like mobile placeOrder)
+      await this.cartRepository.updateCartStatus(cart.id, 'converted');
 
       // 7. Add loyalty points
       // In a real app, loyalty rewards logic runs here.
@@ -376,7 +376,7 @@ export class OrderService {
   }
 
   /**
-   * Update order status by a barista or branch manager.
+   * Updates an order's status.
    * If status transitions to 'completed', awards stamps for loyalty eligible products.
    */
   async updateOrderStatus(orderId: string, status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled', userProfile: UserProfile) {
@@ -421,19 +421,38 @@ export class OrderService {
         });
       } catch (_) {}
 
-      // 4. If status is completed, process loyalty points
+      // 4. If status is completed, process loyalty points (aggregate to prevent notification spam)
       // NOTE: product loyalty data is already joined in getOrderByIdAdmin — no N+1 queries.
       if (status === 'completed' && order.order_items) {
+        let totalStampsEarned = 0;
+        let totalRewardsEarned = 0;
+
         for (const item of order.order_items) {
           try {
             // Use the pre-joined product data instead of fetching each product separately
             const product = (item as any).products;
             if (product && product.is_loyalty_eligible) {
-              await this.loyaltyService.addStampsForProduct(order.user_id, product.category_id, item.quantity);
+              const res = await this.loyaltyService.addStampsForProduct(
+                order.user_id,
+                product.category_id,
+                item.quantity,
+                false // Do not send notification inside loop
+              );
+              totalStampsEarned += res.stampsAdded;
+              totalRewardsEarned += res.rewardsEarned;
             }
           } catch (e) {
             logger.error(`Failed to process loyalty stamps for order item ${item.id}:`, e);
           }
+        }
+
+        if (totalStampsEarned > 0) {
+          const rewardMsg = totalRewardsEarned > 0 ? ` Ayrıca ${totalRewardsEarned} adet hediye kahve kazandınız!` : '';
+          this.notificationService.sendToUser(
+            order.user_id,
+            'Tebrikler! Puan Kazandınız 🎁',
+            `Siparişinizden ${totalStampsEarned} kahve puanı kazandınız.${rewardMsg} Toplam puanınızı cüzdanınızdan görebilirsiniz.`
+          );
         }
       }
 
