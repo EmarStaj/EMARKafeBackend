@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import app, { logger } from './app';
-
-// Auto-deploy test trigger
+import { startAutoCompleteJob } from './jobs/auto-complete.job';
 
 const PORT = process.env.PORT || 5001;
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 EMARKafe Backend running on port ${PORT}`);
+  startAutoCompleteJob();
 });
 
 // Handle unhandled promise rejections

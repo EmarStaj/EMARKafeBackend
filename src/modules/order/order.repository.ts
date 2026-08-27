@@ -5,6 +5,8 @@ export interface OrderInput {
   branch_id: string;
   total_price: number;
   status: 'created' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+  pickup_code?: string;
+  order_number?: string;
 }
 
 export interface OrderItemInput {
@@ -195,10 +197,18 @@ export class OrderRepository {
   /**
    * Update order status. Bypasses RLS.
    */
-  async updateOrderStatus(orderId: string, status: string, completedAt?: string) {
+  async updateOrderStatus(
+    orderId: string, 
+    status: string, 
+    extra?: string | { ready_at?: string; completed_at?: string; completed_by?: string }
+  ) {
     const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (completedAt) {
-      updateData.completed_at = completedAt;
+    if (typeof extra === 'string') {
+      updateData.completed_at = extra;
+    } else if (extra && typeof extra === 'object') {
+      if (extra.ready_at) updateData.ready_at = extra.ready_at;
+      if (extra.completed_at) updateData.completed_at = extra.completed_at;
+      if (extra.completed_by) updateData.completed_by = extra.completed_by;
     }
 
     const { data, error } = await supabaseAdmin

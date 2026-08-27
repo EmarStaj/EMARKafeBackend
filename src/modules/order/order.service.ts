@@ -233,12 +233,17 @@ export class OrderService {
     }
 
     try {
+      const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
+      const orderNumber = 'E-' + Math.floor(10000 + Math.random() * 90000).toString();
+
       // 4. Create the order header
       const order = await this.orderRepository.createOrder({
         user_id: customerId,
         branch_id: branchId,
         total_price: totalPrice,
-        status: 'created' // Direct checkout at counter, but still needs preparation
+        status: 'created', // Direct checkout at counter, but still needs preparation
+        pickup_code: pickupCode,
+        order_number: orderNumber
       }, baristaToken, true);
 
       // --- FINANCIAL DEDUCTION (Saga Step) ---
@@ -330,9 +335,26 @@ export class OrderService {
         throw new AppError('Cannot update an order that is already completed or cancelled.', 400);
       }
 
-      // 3. Perform update (and set completed_at timestamp if status is 'completed')
-      const completedAt = status === 'completed' ? new Date().toISOString() : undefined;
-      const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status, completedAt);
+      // 3. Perform update (and set timestamps/actor)
+      const extra: { ready_at?: string; completed_at?: string; completed_by?: string } = {};
+      if (status === 'ready') {
+        extra.ready_at = new Date().toISOString();
+      } else if (status === 'completed') {
+        extra.completed_at = new Date().toISOString();
+        extra.completed_by = userProfile.role === 'customer' ? 'customer' : 'barista';
+      }
+      const updatedOrder = await this.orderRepository.updateOrderStatus(orderId, status, extra);
+
+      // Audit status transition
+      try {
+        await supabaseAdmin.from('order_status_history').insert({
+          order_id: orderId,
+          from_status: order.status,
+          to_status: status,
+          actor_type: userProfile.role || 'customer',
+          actor_id: userProfile.id
+        });
+      } catch (_) {}
 
       // 4. If status is completed, process loyalty points
       // NOTE: product loyalty data is already joined in getOrderByIdAdmin — no N+1 queries.
