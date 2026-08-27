@@ -245,7 +245,7 @@ describe('CartRepository', () => {
     it('should update item and return it', async () => {
       const mockData = { id: 'item-1', quantity: 3 };
       const builder = mockBuilder({
-        single: jest.fn().mockResolvedValue({ data: mockData, error: null })
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockData, error: null })
       });
       (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
 
@@ -255,9 +255,18 @@ describe('CartRepository', () => {
       expect(builder.eq).toHaveBeenCalledWith('id', 'item-1');
     });
 
+    it('should throw 404 AppError if item not found', async () => {
+      const builder = mockBuilder({
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null })
+      });
+      (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
+
+      await expect(repository.updateCartItem('item-1', 3)).rejects.toThrow('Cart item not found.');
+    });
+
     it('should throw error if update fails', async () => {
       const builder = mockBuilder({
-        single: jest.fn().mockResolvedValue({ data: null, error: new Error('update fail') })
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: new Error('update fail') })
       });
       (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
 
@@ -267,9 +276,9 @@ describe('CartRepository', () => {
 
   describe('removeFromCart', () => {
     it('should remove item', async () => {
+      const mockData = { id: 'item-1' };
       const builder = mockBuilder({
-        resolvedData: null,
-        resolvedError: null
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockData, error: null })
       });
       (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
 
@@ -278,10 +287,18 @@ describe('CartRepository', () => {
       expect(builder.eq).toHaveBeenCalledWith('id', 'item-1');
     });
 
+    it('should throw 404 AppError if item not found', async () => {
+      const builder = mockBuilder({
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null })
+      });
+      (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
+
+      await expect(repository.removeFromCart('item-1')).rejects.toThrow('Cart item not found.');
+    });
+
     it('should throw error if remove fails', async () => {
       const builder = mockBuilder({
-        resolvedData: null,
-        resolvedError: new Error('delete fail')
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: new Error('delete fail') })
       });
       (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
 

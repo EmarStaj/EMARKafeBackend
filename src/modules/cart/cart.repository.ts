@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../config/supabase';
+import { AppError } from '../../utils/app-error';
 
 export interface Cart {
   id: string;
@@ -120,9 +121,12 @@ export class CartRepository {
       .update({ quantity })
       .eq('id', cartItemId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      throw new AppError('Cart item not found.', 404);
+    }
     return data;
   }
 
@@ -130,12 +134,17 @@ export class CartRepository {
    * Remove item from cart.
    */
   async removeFromCart(cartItemId: string) {
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('cart_items')
       .delete()
-      .eq('id', cartItemId);
+      .eq('id', cartItemId)
+      .select()
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      throw new AppError('Cart item not found.', 404);
+    }
   }
 
   /**
