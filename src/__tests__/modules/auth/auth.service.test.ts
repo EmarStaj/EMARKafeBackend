@@ -19,6 +19,7 @@ jest.mock('../../../config/supabase', () => ({
     auth: {
       admin: {
         updateUserById: jest.fn(),
+        signOut: jest.fn(),
       }
     }
   }
@@ -73,12 +74,12 @@ describe('AuthService Unit Tests', () => {
 
   describe('signOut', () => {
     it('should invalidate profile cache and call supabase admin signOut', async () => {
-      (supabase.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
+      (supabaseAdmin.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
 
       await authService.signOut('tok-123', 'u-1');
 
       expect(profileCache.invalidate).toHaveBeenCalledWith('u-1');
-      expect(supabase.auth.admin.signOut).toHaveBeenCalledWith('tok-123');
+      expect(supabaseAdmin.auth.admin.signOut).toHaveBeenCalledWith('tok-123');
     });
   });
 

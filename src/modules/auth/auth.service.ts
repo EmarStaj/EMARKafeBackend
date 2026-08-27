@@ -53,7 +53,7 @@ export class AuthService {
     if (userId) {
       await profileCache.invalidate(userId);
     }
-    const { error } = await supabase.auth.admin.signOut(accessToken);
+    const { error } = await supabaseAdmin.auth.admin.signOut(accessToken);
     if (error) {
       throw new AppError(error.message, 400);
     }

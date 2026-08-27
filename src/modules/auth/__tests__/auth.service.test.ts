@@ -23,6 +23,7 @@ jest.mock('../../../config/supabase', () => ({
     auth: {
       admin: {
         updateUserById: jest.fn(),
+        signOut: jest.fn(),
       }
     }
   }
@@ -101,23 +102,23 @@ describe('AuthService', () => {
 
   describe('signOut', () => {
     it('should sign out successfully and invalidate cache if userId provided', async () => {
-      (supabase.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
+      (supabaseAdmin.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
 
       await authService.signOut('token', 'user-id');
       expect(profileCache.invalidate).toHaveBeenCalledWith('user-id');
-      expect(supabase.auth.admin.signOut).toHaveBeenCalledWith('token');
+      expect(supabaseAdmin.auth.admin.signOut).toHaveBeenCalledWith('token');
     });
 
     it('should sign out successfully without invalidating cache if userId not provided', async () => {
-      (supabase.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
+      (supabaseAdmin.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: null });
 
       await authService.signOut('token');
       expect(profileCache.invalidate).not.toHaveBeenCalled();
-      expect(supabase.auth.admin.signOut).toHaveBeenCalledWith('token');
+      expect(supabaseAdmin.auth.admin.signOut).toHaveBeenCalledWith('token');
     });
 
     it('should throw AppError on error', async () => {
-      (supabase.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: { message: 'signout error' } });
+      (supabaseAdmin.auth.admin.signOut as jest.Mock).mockResolvedValue({ error: { message: 'signout error' } });
 
       await expect(authService.signOut('token')).rejects.toThrow(AppError);
     });
