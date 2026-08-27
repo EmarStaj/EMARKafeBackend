@@ -2,6 +2,7 @@ import { container } from 'tsyringe';
 import { supabaseAdmin } from '../config/supabase';
 import { LoyaltyService } from '../modules/loyalty/loyalty.service';
 import { logger } from '../app';
+import { redis } from '../config/redis';
 
 let jobInterval: NodeJS.Timeout | null = null;
 
@@ -13,6 +14,15 @@ export function startAutoCompleteJob() {
 
   jobInterval = setInterval(async () => {
     try {
+      // 1. Distributed lock across multiple horizontal instances/pods using Redis
+      if (redis.status === 'ready') {
+        const lockAcquired = await redis.set('lock:job:auto_complete', '1', 'EX', 50, 'NX');
+        if (!lockAcquired) {
+          // Another backend instance holds the lock for this cycle
+          return;
+        }
+      }
+
       const expirationDate = new Date(Date.now() - AUTO_COMPLETE_THRESHOLD_MS).toISOString();
 
       // Find orders that have been in 'ready' status for >= 20 minutes
@@ -64,13 +74,13 @@ export function startAutoCompleteJob() {
 
         if (updateError || !updated) continue;
 
-        // Process loyalty points
+        // Process loyalty points (silently without spamming)
         if (order.order_items) {
           for (const item of order.order_items) {
             try {
               const product = (item as any).products;
               if (product && product.is_loyalty_eligible) {
-                await loyaltyService.addStampsForProduct(order.user_id, product.category_id, item.quantity);
+                await loyaltyService.addStampsForProduct(order.user_id, product.category_id, item.quantity, false);
               }
             } catch (e) {
               logger.error(`[AutoCompleteJob] Loyalty stamp error for order ${order.id}:`, e);

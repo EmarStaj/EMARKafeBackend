@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -62,17 +62,17 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, native HTTP clients, Postman)
     if (!origin) return callback(null, true);
-    // Dev mode: allow all
-    if (!isProduction) return callback(null, true);
+    // Dev mode: reflect origin
+    if (!isProduction) return callback(null, origin);
     // Production with whitelist: check origin
     if (allowedOrigins.length > 0) {
-      // If wildcard '*' is in the list, allow all origins
-      if (allowedOrigins.includes('*')) return callback(null, true);
+      // If wildcard '*' is in the list, reflect origin to allow credentials
+      if (allowedOrigins.includes('*')) return callback(null, origin);
       // Otherwise strictly match the origin
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, origin);
       return callback(new Error(`CORS: Origin '${origin}' not allowed`), false);
     }
-    return callback(null, true);
+    return callback(null, origin);
   },
   credentials: true,
 }));
@@ -124,28 +124,34 @@ app.use((req: Request, res: Response, next: NextFunction): void => {
   next();
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/menu', menuRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/favorites', favoritesRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/branches', branchRoutes);
-app.use('/api/options', optionRoutes);
-app.use('/api/menu', optionRoutes); // Also mount options under /api/menu for backwards compatibility
-app.use('/api/ratings', ratingRoutes); // Mounts /products/:productId/ratings under /api/ratings
-app.use('/api/loyalty', loyaltyRoutes);
-app.use('/api/device-tokens', deviceTokenRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/wallet', walletRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/app-settings', settingsRoutes);
-app.use('/api/audit-logs', auditRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/staff', staffRoutes);
-app.use('/api/admin/staff', staffRoutes);
+// API Routes (versioned & backwards compatible)
+const apiRouter = Router();
+
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/profile', profileRoutes);
+apiRouter.use('/menu', menuRoutes);
+apiRouter.use('/cart', cartRoutes);
+apiRouter.use('/orders', orderRoutes);
+apiRouter.use('/favorites', favoritesRoutes);
+apiRouter.use('/categories', categoryRoutes);
+apiRouter.use('/branches', branchRoutes);
+apiRouter.use('/options', optionRoutes);
+apiRouter.use('/menu', optionRoutes); // Also mount options under /menu for backwards compatibility
+apiRouter.use('/ratings', ratingRoutes); // Mounts /products/:productId/ratings under /ratings
+apiRouter.use('/loyalty', loyaltyRoutes);
+apiRouter.use('/device-tokens', deviceTokenRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/wallet', walletRoutes);
+apiRouter.use('/settings', settingsRoutes);
+apiRouter.use('/app-settings', settingsRoutes);
+apiRouter.use('/audit-logs', auditRoutes);
+apiRouter.use('/audit', auditRoutes);
+apiRouter.use('/staff', staffRoutes);
+apiRouter.use('/admin/staff', staffRoutes);
+
+// Mount versioned (/api/v1) and unversioned (/api) routes
+app.use('/api/v1', apiRouter);
+app.use('/api', apiRouter);
 
 // Fallback for undefined routes (404)
 app.all('*', (req: Request, _res: Response, next: NextFunction) => {
