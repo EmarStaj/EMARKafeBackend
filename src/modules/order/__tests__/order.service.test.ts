@@ -118,6 +118,20 @@ describe('OrderService', () => {
       await expect(service.placeOrder('u1', 'b1', 't1')).rejects.toThrow('Insufficient wallet balance');
     });
 
+    it('executes compensating saga refund rollback when order item creation fails after payment', async () => {
+      mockCartRepo.getCart.mockResolvedValue({
+        cart: { id: 'c1' }, items: [{ product_id: 'p1', quantity: 1, unit_price: 10, products: { name: 'P1' } }]
+      });
+      (supabaseAdmin.from as jest.Mock)().in.mockResolvedValueOnce({ data: [{ product_id: 'p1', is_available: true }], error: null });
+      (supabaseAdmin.from as jest.Mock)().single.mockResolvedValueOnce({ data: { balance: 20 }, error: null });
+      mockOrderRepo.createOrder.mockResolvedValue({ id: 'o1' });
+      (supabaseAdmin.rpc as jest.Mock).mockResolvedValue({ data: true, error: null });
+      mockOrderRepo.createOrderItems.mockRejectedValue(new Error('Insert items failed'));
+
+      await expect(service.placeOrder('u1', 'b1', 't1')).rejects.toThrow('Insert items failed');
+      expect(supabaseAdmin.rpc).toHaveBeenCalledWith('add_balance', { p_user_id: 'u1', p_amount: 10 });
+    });
+
     it('success', async () => {
       mockCartRepo.getCart.mockResolvedValue({
         cart: { id: 'c1' }, items: [{ product_id: 'p1', quantity: 1, unit_price: 10, products: { name: 'P1' } }]

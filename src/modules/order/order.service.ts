@@ -120,6 +120,9 @@ export class OrderService {
       throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but your balance is ${profile.balance} TL.`, 402);
     }
 
+    let createdOrderId: string | null = null;
+    let paymentDeducted = false;
+
     try {
       // 5. Create the order header
       const order = await this.orderRepository.createOrder({
@@ -128,6 +131,7 @@ export class OrderService {
         total_price: totalPrice,
         status: 'created'
       }, token);
+      createdOrderId = order.id;
 
       // --- FINANCIAL DEDUCTION (Saga Step) ---
       const { data: paymentSuccess, error: paymentError } = await supabaseAdmin.rpc('deduct_balance', {
@@ -141,6 +145,7 @@ export class OrderService {
         await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
         throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
+      paymentDeducted = true;
 
       // 4. Attach order_id and insert order items
       const orderItems: OrderItemInput[] = itemsToInsert.map(item => ({
@@ -155,6 +160,33 @@ export class OrderService {
       // 6. Return the fully populated order receipt
       return await this.orderRepository.getOrderById(order.id, token);
     } catch (error: unknown) {
+      // --- SAGA COMPENSATING ROLLBACK ---
+      if (paymentDeducted) {
+        try {
+          await supabaseAdmin.rpc('add_balance', {
+            p_user_id: userId,
+            p_amount: totalPrice
+          });
+          await supabaseAdmin.from('transactions').insert({
+            user_id: userId,
+            amount: totalPrice,
+            type: 'refund',
+            order_id: createdOrderId
+          });
+          await profileCache.invalidate(userId);
+        } catch (rollbackErr) {
+          logger.error(`Critical: Saga refund rollback failed for user ${userId}, order ${createdOrderId}:`, rollbackErr);
+        }
+      }
+
+      if (createdOrderId) {
+        try {
+          await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', createdOrderId);
+        } catch (cancelErr) {
+          logger.error(`Failed to cancel order ${createdOrderId} during rollback:`, cancelErr);
+        }
+      }
+
       rethrowAsAppError(error, 'Failed to place order.');
     }
   }
@@ -233,6 +265,9 @@ export class OrderService {
       throw new AppError(`Insufficient wallet balance. Cart total is ${totalPrice} TL, but balance is ${profile.balance} TL.`, 402);
     }
 
+    let createdOrderId: string | null = null;
+    let paymentDeducted = false;
+
     try {
       const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
       const orderNumber = 'E-' + Math.floor(10000 + Math.random() * 90000).toString();
@@ -246,6 +281,7 @@ export class OrderService {
         pickup_code: pickupCode,
         order_number: orderNumber
       }, baristaToken, true);
+      createdOrderId = order.id;
 
       // --- FINANCIAL DEDUCTION (Saga Step) ---
       const { data: paymentSuccess, error: paymentError } = await supabaseAdmin.rpc('deduct_balance', {
@@ -259,6 +295,7 @@ export class OrderService {
         await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
         throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
+      paymentDeducted = true;
 
       // 5. Attach order_id and insert order items
       const orderItems: OrderItemInput[] = itemsToInsert.map(item => ({
@@ -275,6 +312,33 @@ export class OrderService {
 
       return await this.orderRepository.getOrderById(order.id, baristaToken, true);
     } catch (error: unknown) {
+      // --- SAGA COMPENSATING ROLLBACK ---
+      if (paymentDeducted) {
+        try {
+          await supabaseAdmin.rpc('add_balance', {
+            p_user_id: customerId,
+            p_amount: totalPrice
+          });
+          await supabaseAdmin.from('transactions').insert({
+            user_id: customerId,
+            amount: totalPrice,
+            type: 'refund',
+            order_id: createdOrderId
+          });
+          await profileCache.invalidate(customerId);
+        } catch (rollbackErr) {
+          logger.error(`Critical: Saga refund rollback failed for customer ${customerId}, order ${createdOrderId}:`, rollbackErr);
+        }
+      }
+
+      if (createdOrderId) {
+        try {
+          await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', createdOrderId);
+        } catch (cancelErr) {
+          logger.error(`Failed to cancel order ${createdOrderId} during rollback:`, cancelErr);
+        }
+      }
+
       rethrowAsAppError(error, 'Failed to process QR checkout.');
     }
   }
