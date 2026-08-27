@@ -18,7 +18,10 @@ const addToCartSchema = z.object({
 
 const updateCartItemSchema = z.object({
   body: z.object({
-    quantity: z.number({ required_error: 'Quantity is required' }).int('Quantity must be an integer'),
+    quantity: z.number({ required_error: 'Quantity is required' })
+      .int('Quantity must be an integer')
+      .min(1, 'Quantity must be at least 1')
+      .max(50, 'Quantity cannot exceed 50 per item'),
   }),
   params: z.object({
     id: z.string({ required_error: 'Cart item ID parameter is required' }).uuid('Invalid Cart Item UUID format'),
