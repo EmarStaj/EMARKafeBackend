@@ -112,22 +112,33 @@ describe('WalletService', () => {
 
   describe('verifyQrToken', () => {
     it('should verify token and return user ID', () => {
-      (jwt.verify as jest.Mock).mockReturnValue({ action: 'checkout', userId: 'user1' });
+      (jwt.verify as jest.Mock).mockReturnValue({ action: 'checkout', userId: 'user1', jti: 'nonce-1' });
 
       const result = service.verifyQrToken('valid-token');
       expect(result).toBe('user1');
     });
 
+    it('should throw if QR code is replayed with the same jti', () => {
+      (jwt.verify as jest.Mock).mockReturnValue({ action: 'checkout', userId: 'user1', jti: 'nonce-replay' });
+
+      // First use succeeds
+      const result = service.verifyQrToken('valid-token-replay');
+      expect(result).toBe('user1');
+
+      // Second use fails with replay error
+      expect(() => service.verifyQrToken('valid-token-replay')).toThrow('QR code has already been used.');
+    });
+
     it('should throw if action is not checkout', () => {
       (jwt.verify as jest.Mock).mockReturnValue({ action: 'other', userId: 'user1' });
 
-      expect(() => service.verifyQrToken('invalid-token')).toThrow('Invalid or expired QR code.');
+      expect(() => service.verifyQrToken('invalid-token')).toThrow('Invalid QR code action.');
     });
 
     it('should throw if userId is missing', () => {
       (jwt.verify as jest.Mock).mockReturnValue({ action: 'checkout' });
 
-      expect(() => service.verifyQrToken('invalid-token')).toThrow('Invalid or expired QR code.');
+      expect(() => service.verifyQrToken('invalid-token')).toThrow('Invalid QR code action.');
     });
 
     it('should throw if verify throws an error', () => {

@@ -54,3 +54,25 @@ export const authRateLimiter = isRateLimitEnabled
       },
     })
   : noopMiddleware;
+
+/**
+ * Financial rate limiter — applies to wallet topup and QR code generation.
+ * Allows 15 requests per 15 minutes per IP to prevent spamming transactions.
+ * Disabled when RATE_LIMIT_ENABLED=false or in test mode.
+ */
+export const financialRateLimiter = isRateLimitEnabled
+  ? rateLimit({
+      store: useRedisStore ? new RedisStore({
+        sendCommand: (...args: string[]) => redisClient.call(args[0], ...args.slice(1)) as any,
+      }) : undefined,
+      windowMs: 15 * 60 * 1000,
+      max: 15,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: {
+        success: false,
+        message: 'Too many financial transactions from this IP. Please try again after 15 minutes.',
+        errors: null,
+      },
+    })
+  : noopMiddleware;
