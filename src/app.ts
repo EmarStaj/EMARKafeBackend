@@ -133,7 +133,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/branches', branchRoutes);
-app.use('/api/menu', optionRoutes); // Mount options under /api/menu to match client paths
+app.use('/api/options', optionRoutes);
+app.use('/api/menu', optionRoutes); // Also mount options under /api/menu for backwards compatibility
 app.use('/api/ratings', ratingRoutes); // Mounts /products/:productId/ratings under /api/ratings
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/device-tokens', deviceTokenRoutes);
