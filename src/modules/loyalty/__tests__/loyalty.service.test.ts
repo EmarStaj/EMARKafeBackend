@@ -103,4 +103,31 @@ describe('LoyaltyService', () => {
       expect(res).toEqual({ stampsAdded: 0, currentStamps: 0, rewardsEarned: 0 });
     });
   });
+
+  describe('redeemReward', () => {
+    it('should throw 404 if reward not found', async () => {
+      repo.findRewardById = jest.fn().mockResolvedValue(null);
+      await expect(service.redeemReward('u1', 'r1')).rejects.toThrow('Reward not found.');
+    });
+
+    it('should throw 403 if reward does not belong to user', async () => {
+      repo.findRewardById = jest.fn().mockResolvedValue({ id: 'r1', user_id: 'other_user', status: 'earned' });
+      await expect(service.redeemReward('u1', 'r1')).rejects.toThrow('Forbidden: You do not own this reward.');
+    });
+
+    it('should throw 400 if reward status is not earned', async () => {
+      repo.findRewardById = jest.fn().mockResolvedValue({ id: 'r1', user_id: 'u1', status: 'redeemed' });
+      await expect(service.redeemReward('u1', 'r1')).rejects.toThrow('This reward has already been redeemed');
+    });
+
+    it('should redeem reward successfully and send notification', async () => {
+      repo.findRewardById = jest.fn().mockResolvedValue({ id: 'r1', user_id: 'u1', status: 'earned' });
+      repo.redeemReward = jest.fn().mockResolvedValue({ id: 'r1', status: 'redeemed' });
+
+      const result = await service.redeemReward('u1', 'r1', 'order-123');
+      expect(repo.redeemReward).toHaveBeenCalledWith('r1', 'order-123');
+      expect(notif.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('Hediye Kahveniz'), expect.any(String));
+      expect(result).toEqual({ id: 'r1', status: 'redeemed' });
+    });
+  });
 });

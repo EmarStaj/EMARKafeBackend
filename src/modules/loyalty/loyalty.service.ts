@@ -89,4 +89,35 @@ export class LoyaltyService {
       return { stampsAdded: 0, currentStamps: 0, rewardsEarned: 0 };
     }
   }
+
+  /**
+   * Redeems an earned loyalty reward for a free item or order discount.
+   */
+  async redeemReward(userId: string, rewardId: string, orderId?: string) {
+    try {
+      const reward = await this.loyaltyRepository.findRewardById(rewardId);
+      if (!reward) {
+        throw new AppError('Reward not found.', 404);
+      }
+      if (reward.user_id !== userId) {
+        throw new AppError('Forbidden: You do not own this reward.', 403);
+      }
+      if (reward.status !== 'earned') {
+        throw new AppError('This reward has already been redeemed or is expired.', 400);
+      }
+
+      const redeemed = await this.loyaltyRepository.redeemReward(rewardId, orderId || 'MANUAL_REDEMPTION');
+      
+      this.notificationService.sendToUser(
+        userId,
+        'Hediye Kahveniz Kullanıldı ☕',
+        'Kazandığınız hediye kahve ödülü başarıyla kullanıldı. Afiyet olsun!'
+      );
+
+      return redeemed;
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(error.message || 'Failed to redeem loyalty reward.', 400);
+    }
+  }
 }

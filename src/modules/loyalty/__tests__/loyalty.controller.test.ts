@@ -95,4 +95,39 @@ describe('LoyaltyController', () => {
       expect(next).toHaveBeenCalledWith(err);
     });
   });
+
+  describe('redeemReward', () => {
+    it('should throw Unauthorized if no user id', async () => {
+      req.user = undefined;
+      await controller.redeemReward(req as Request, res as Response, next);
+      expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    });
+
+    it('should throw 400 if reward id is missing', async () => {
+      req.params = {};
+      req.body = {};
+      await controller.redeemReward(req as Request, res as Response, next);
+      expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    });
+
+    it('should redeem reward successfully', async () => {
+      req.params = { id: 'r1' };
+      req.body = { order_id: 'o1' };
+      service.redeemReward = jest.fn().mockResolvedValue({ id: 'r1', status: 'redeemed' } as any);
+      
+      await controller.redeemReward(req as Request, res as Response, next);
+      expect(service.redeemReward).toHaveBeenCalledWith('u1', 'r1', 'o1');
+      expect(sendSuccess).toHaveBeenCalledWith(res, { id: 'r1', status: 'redeemed' }, 'Loyalty reward redeemed successfully.');
+    });
+
+    it('should call next on error', async () => {
+      req.params = { id: 'r1' };
+      req.body = {};
+      const err = new Error('err');
+      service.redeemReward = jest.fn().mockRejectedValue(err);
+      
+      await controller.redeemReward(req as Request, res as Response, next);
+      expect(next).toHaveBeenCalledWith(err);
+    });
+  });
 });

@@ -72,10 +72,20 @@ export class RatingRepository {
   }
 
   /**
-   * Recalculate and update avg_rating and rating_count on products table
+   * Recalculate and update avg_rating and rating_count on products table.
+   * Leverages database-level calculation or efficient aggregation.
    */
   async updateProductRatingStats(productId: string) {
-    // Calculate new stats
+    try {
+      // 1. Attempt database-level procedure if configured
+      const { data: rpcData, error: rpcError } = await supabaseAdmin
+        .rpc('update_product_rating_stats', { p_product_id: productId });
+      if (!rpcError && rpcData) {
+        return rpcData;
+      }
+    } catch (_) {}
+
+    // 2. Fetch rating rows
     const { data: ratings, error: fetchError } = await supabaseAdmin
       .from('product_ratings')
       .select('rating')
@@ -83,7 +93,7 @@ export class RatingRepository {
 
     if (fetchError) throw fetchError;
 
-    const count = ratings.length;
+    const count = ratings ? ratings.length : 0;
     const avg = count > 0 
       ? ratings.reduce((sum, r) => sum + r.rating, 0) / count 
       : 0;

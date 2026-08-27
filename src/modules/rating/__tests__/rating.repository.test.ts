@@ -1,7 +1,7 @@
 import { RatingRepository } from '../rating.repository';
 import { supabaseAdmin } from '../../../config/supabase';
 
-jest.mock('../../../config/supabase', () => { return { supabaseAdmin: { from: jest.fn(), auth: { admin: { deleteUser: jest.fn() } } } }; });
+jest.mock('../../../config/supabase', () => { return { supabaseAdmin: { from: jest.fn(), rpc: jest.fn().mockResolvedValue({ data: null, error: new Error('no rpc') }), auth: { admin: { deleteUser: jest.fn() } } } }; });
 
 describe('RatingRepository', () => {
   let repository: RatingRepository;

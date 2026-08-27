@@ -101,6 +101,20 @@ export class LoyaltyRepository {
   }
 
   /**
+   * Fetch specific reward by ID.
+   */
+  async findRewardById(rewardId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('loyalty_rewards')
+      .select('*')
+      .eq('id', rewardId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
    * Marks a reward as redeemed for a specific order.
    */
   async redeemReward(rewardId: string, orderId: string) {

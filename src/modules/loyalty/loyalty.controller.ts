@@ -43,4 +43,19 @@ export class LoyaltyController {
       next(error);
     }
   };
+
+  redeemReward = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) throw new AppError('Unauthorized', 401);
+
+      const rewardId = req.params.id || req.body.reward_id;
+      if (!rewardId) throw new AppError('Reward ID is required.', 400);
+
+      const redeemed = await this.loyaltyService.redeemReward(userId, rewardId, req.body.order_id);
+      sendSuccess(res, redeemed, 'Loyalty reward redeemed successfully.');
+    } catch (error) {
+      next(error);
+    }
+  };
 }

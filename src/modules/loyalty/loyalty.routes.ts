@@ -13,5 +13,7 @@ router.use(requireRole(['customer']));
 router.get('/', controller.getLoyaltySummary);
 router.get('/progress', controller.getLoyaltyProgress);
 router.get('/rewards', controller.getLoyaltyRewards);
+router.post('/rewards/:id/redeem', controller.redeemReward);
+router.post('/redeem', controller.redeemReward);
 
 export default router;
