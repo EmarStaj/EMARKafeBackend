@@ -17,9 +17,9 @@ export class OrderController {
     try {
       const userId = req.user!.id;
       const token = req.token!;
-      const { branch_id } = req.body;
+      const { branch_id, reward_id, use_reward } = req.body;
 
-      const order = await this.orderService.placeOrder(userId, branch_id, token);
+      const order = await this.orderService.placeOrder(userId, branch_id, token, reward_id, use_reward);
 
       sendSuccess(res, order, 'Order placed successfully.', 201);
     } catch (error) {

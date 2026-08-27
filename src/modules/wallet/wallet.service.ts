@@ -6,6 +6,7 @@ import { AppError, rethrowAsAppError } from '../../utils/app-error';
 import jwt from 'jsonwebtoken';
 import { redis } from '../../config/redis';
 import { NotificationService } from '../notification/notification.service';
+import { supabaseAdmin } from '../../config/supabase';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not defined.');
@@ -69,7 +70,7 @@ export class WalletService {
    * Generates a signed JWT token for the user to display as a QR code.
    * Includes a unique JTI nonce to prevent replay attacks.
    */
-  async generateQrToken(userId: string, token: string) {
+  async generateQrToken(userId: string, token: string, rewardId?: string, useReward?: boolean) {
     try {
       // 1. Fetch current balance
       const { balance } = await this.walletRepository.getBalanceAndTransactions(userId, token);
@@ -81,21 +82,73 @@ export class WalletService {
       }
 
       let cartTotal = 0;
+      let mostExpensiveCoffeePrice = 0;
+
       for (const item of cartData.items) {
-        cartTotal += Number(item.unit_price) * item.quantity;
+        const itemPrice = Number(item.unit_price) * item.quantity;
+        cartTotal += itemPrice;
+
+        const product = item.products as any;
+        const catName = (product?.categories?.name || '').toLowerCase();
+        const prodName = (product?.name || '').toLowerCase();
+        if (
+          catName.includes('kahve') ||
+          catName.includes('coffee') ||
+          catName.includes('sıcak') ||
+          catName.includes('soğuk') ||
+          catName.includes('iced') ||
+          catName.includes('hot') ||
+          prodName.includes('latte') ||
+          prodName.includes('cappuccino') ||
+          prodName.includes('mocha') ||
+          prodName.includes('americano') ||
+          prodName.includes('espresso')
+        ) {
+          const unitPrice = Number(item.unit_price);
+          if (unitPrice > mostExpensiveCoffeePrice) {
+            mostExpensiveCoffeePrice = unitPrice;
+          }
+        }
+      }
+
+      let effectiveRewardId: string | undefined = undefined;
+
+      if (rewardId || useReward) {
+        const { data: rewards } = await supabaseAdmin
+          .from('loyalty_rewards')
+          .select('id, status')
+          .eq('user_id', userId)
+          .eq('status', 'earned');
+
+        if (rewards && rewards.length > 0) {
+          effectiveRewardId =
+            rewardId && rewards.some((r: any) => r.id === rewardId)
+              ? rewardId
+              : rewards[0].id;
+
+          if (mostExpensiveCoffeePrice > 0) {
+            cartTotal = Math.max(0, cartTotal - mostExpensiveCoffeePrice);
+          }
+        }
       }
 
       // 3. Verify balance is sufficient
       if (balance < cartTotal) {
-        throw new AppError(`Insufficient balance. Your cart total is ${cartTotal} TL, but your balance is ${balance} TL.`, 400);
+        throw new AppError(
+          `Insufficient balance. Your cart total is ${cartTotal} TL, but your balance is ${balance} TL.`,
+          400
+        );
       }
 
       // 4. Generate Token with unique nonce (JTI)
       const jti = crypto.randomUUID();
-      const payload = {
+      const payload: Record<string, any> = {
         userId,
         action: 'checkout',
       };
+      if (effectiveRewardId) {
+        payload.rewardId = effectiveRewardId;
+      }
 
       const qrToken = jwt.sign(payload, QR_SECRET, { expiresIn: QR_EXPIRES_IN, jwtid: jti });
       return { qr_token: qrToken, expires_in_minutes: 10 };
@@ -107,7 +160,7 @@ export class WalletService {
   /**
    * Verifies a scanned QR token, enforces single-use replay protection via JTI, and extracts user ID.
    */
-  verifyQrToken(qrToken: string): string {
+  verifyQrToken(qrToken: string): { userId: string; rewardId?: string } {
     try {
       const decoded = jwt.verify(qrToken, QR_SECRET) as any;
       if (decoded.action !== 'checkout' || !decoded.userId) {
@@ -126,7 +179,10 @@ export class WalletService {
         }
       }
 
-      return decoded.userId;
+      return {
+        userId: decoded.userId,
+        rewardId: decoded.rewardId,
+      };
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError('Invalid or expired QR code.', 400);

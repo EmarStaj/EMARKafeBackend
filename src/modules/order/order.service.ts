@@ -23,7 +23,7 @@ export class OrderService {
   /**
    * Place an order from the user's active cart.
    */
-  async placeOrder(userId: string, branchId: string, token: string) {
+  async placeOrder(userId: string, branchId: string, token: string, rewardId?: string, useReward?: boolean) {
     // 1. Fetch active cart and items
     const cartData = await this.cartRepository.getCart(userId, token);
     const cart = cartData.cart;
@@ -52,6 +52,7 @@ export class OrderService {
 
     // 3. Calculate total price, validate stock, and map order items
     let totalPrice = 0;
+    let mostExpensiveCoffeePrice = 0;
     const itemsToInsert: Omit<OrderItemInput, 'order_id'>[] = [];
     const unavailableItems: any[] = [];
 
@@ -82,6 +83,27 @@ export class OrderService {
       const itemTotalPrice = Number(item.unit_price) * item.quantity;
       totalPrice += itemTotalPrice;
 
+      const catName = (product.categories?.name || '').toLowerCase();
+      const prodName = (productName || '').toLowerCase();
+      if (
+        catName.includes('kahve') ||
+        catName.includes('coffee') ||
+        catName.includes('sıcak') ||
+        catName.includes('soğuk') ||
+        catName.includes('iced') ||
+        catName.includes('hot') ||
+        prodName.includes('latte') ||
+        prodName.includes('cappuccino') ||
+        prodName.includes('mocha') ||
+        prodName.includes('americano') ||
+        prodName.includes('espresso')
+      ) {
+        const unitPrice = Number(item.unit_price);
+        if (unitPrice > mostExpensiveCoffeePrice) {
+          mostExpensiveCoffeePrice = unitPrice;
+        }
+      }
+
       // Copying snapshots of names at checkout
       const categoryName = product.categories?.name || 'General';
 
@@ -105,7 +127,27 @@ export class OrderService {
       );
     }
 
-    // 4.5. Check wallet balance BEFORE creating the order (BUG-04)
+    let effectiveRewardId: string | undefined = undefined;
+    if (rewardId || useReward) {
+      const { data: rewards } = await supabaseAdmin
+        .from('loyalty_rewards')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('status', 'earned');
+
+      if (rewards && rewards.length > 0) {
+        effectiveRewardId =
+          rewardId && rewards.some(r => r.id === rewardId)
+            ? rewardId
+            : rewards[0].id;
+
+        if (mostExpensiveCoffeePrice > 0) {
+          totalPrice = Math.max(0, totalPrice - mostExpensiveCoffeePrice);
+        }
+      }
+    }
+
+    // 4.5. Check wallet balance BEFORE creating the order
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('balance')
@@ -157,7 +199,14 @@ export class OrderService {
       // 5. Update the cart status to 'converted' (it's checked out, no longer active)
       await this.cartRepository.updateCartStatus(cart.id, 'converted');
 
-      // 6. Return the fully populated order receipt
+      // 6. Redeem loyalty reward if applied
+      if (effectiveRewardId) {
+        await this.loyaltyService.redeemReward(userId, effectiveRewardId, order.id).catch(err => {
+          logger.warn(`Failed to redeem reward ${effectiveRewardId}:`, err);
+        });
+      }
+
+      // 7. Return the fully populated order receipt
       return await this.orderRepository.getOrderById(order.id, token);
     } catch (error: unknown) {
       // --- SAGA COMPENSATING ROLLBACK ---
@@ -195,11 +244,10 @@ export class OrderService {
    * Barista scans customer QR token to process payment and place the order
    */
   async scanQRAndCheckout(qrToken: string, branchId: string, baristaToken: string) {
-    // 1. Verify QR and extract customerId
-    const customerId = this.walletService.verifyQrToken(qrToken);
+    // 1. Verify QR and extract customerId & rewardId
+    const { userId: customerId, rewardId } = this.walletService.verifyQrToken(qrToken);
 
     // 2. Fetch active cart for the customer (using admin privileges since barista is calling)
-    // We need to extend cartRepository or use supabaseAdmin directly
     const cartData = await this.cartRepository.getCart(customerId, baristaToken, true);
     const cart = cartData.cart;
     const cartItems = cartData.items;
@@ -226,6 +274,7 @@ export class OrderService {
     });
 
     let totalPrice = 0;
+    let mostExpensiveCoffeePrice = 0;
     const itemsToInsert: Omit<OrderItemInput, 'order_id'>[] = [];
 
     for (const item of cartItems) {
@@ -239,7 +288,30 @@ export class OrderService {
         throw new AppError(`Product "${productName}" is currently out of stock.`, 400);
       }
 
-      totalPrice += Number(item.unit_price) * item.quantity;
+      const itemPrice = Number(item.unit_price) * item.quantity;
+      totalPrice += itemPrice;
+
+      const catName = (product.categories?.name || '').toLowerCase();
+      const prodName = (productName || '').toLowerCase();
+      if (
+        catName.includes('kahve') ||
+        catName.includes('coffee') ||
+        catName.includes('sıcak') ||
+        catName.includes('soğuk') ||
+        catName.includes('iced') ||
+        catName.includes('hot') ||
+        prodName.includes('latte') ||
+        prodName.includes('cappuccino') ||
+        prodName.includes('mocha') ||
+        prodName.includes('americano') ||
+        prodName.includes('espresso')
+      ) {
+        const unitPrice = Number(item.unit_price);
+        if (unitPrice > mostExpensiveCoffeePrice) {
+          mostExpensiveCoffeePrice = unitPrice;
+        }
+      }
+
       itemsToInsert.push({
         product_id: item.product_id,
         quantity: item.quantity,
@@ -248,6 +320,10 @@ export class OrderService {
         product_name: productName,
         category_name: product.categories?.name || 'General'
       });
+    }
+
+    if (rewardId && mostExpensiveCoffeePrice > 0) {
+      totalPrice = Math.max(0, totalPrice - mostExpensiveCoffeePrice);
     }
 
     // 5. Check wallet balance
@@ -277,7 +353,7 @@ export class OrderService {
         user_id: customerId,
         branch_id: branchId,
         total_price: totalPrice,
-        status: 'created', // Direct checkout at counter, but still needs preparation
+        status: 'created',
         pickup_code: pickupCode,
         order_number: orderNumber
       }, baristaToken, true);
@@ -291,7 +367,6 @@ export class OrderService {
       });
 
       if (paymentError || !paymentSuccess) {
-        // Rollback: Mark order as cancelled due to insufficient funds
         await supabaseAdmin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
         throw new AppError('Insufficient wallet balance to complete this order.', 402);
       }
@@ -304,11 +379,15 @@ export class OrderService {
       }));
       await this.orderRepository.createOrderItems(orderItems, baristaToken, true);
 
-      // 6. Convert the cart (retains items for analytics like mobile placeOrder)
+      // 6. Convert the cart
       await this.cartRepository.updateCartStatus(cart.id, 'converted');
 
-      // 7. Add loyalty points
-      // In a real app, loyalty rewards logic runs here.
+      // 7. Redeem reward if present
+      if (rewardId) {
+        await this.loyaltyService.redeemReward(customerId, rewardId, order.id).catch(err => {
+          logger.warn(`Failed to redeem reward ${rewardId}:`, err);
+        });
+      }
 
       return await this.orderRepository.getOrderById(order.id, baristaToken, true);
     } catch (error: unknown) {

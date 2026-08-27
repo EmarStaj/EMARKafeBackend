@@ -8,10 +8,11 @@ import { validate } from '../../middlewares/validate.middleware';
 
 const router = Router();
 const controller = container.resolve(OrderController);
-// Zod Validation Schemas
 const placeOrderSchema = z.object({
   body: z.object({
     branch_id: z.string({ required_error: 'Branch ID is required' }).uuid('Invalid Branch UUID format'),
+    reward_id: z.string().uuid().optional(),
+    use_reward: z.boolean().optional(),
   }),
 });
 
