@@ -4,26 +4,12 @@ import { z } from 'zod';
 import { ProfileController } from './profile.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { fullNameSchema } from '../../utils/sanitize';
 
 const router = Router();
 const controller = container.resolve(ProfileController);
 
 // Zod Validation Schemas
-const sanitizeString = (val: string) =>
-  val
-    .replace(/<[^>]*>/g, '') // HTML tagları sil
-    .replace(/[&<>"'`]/g, c => ({ // HTML encode
-      '&': '&amp;', '<': '&lt;', '>': '&gt;',
-      '"': '&quot;', "'": '&#x27;', '`': '&#x60;'
-    }[c] || c))
-    .trim();
-
-const fullNameSchema = z.string()
-  .min(2, 'Ad en az 2 karakter')
-  .max(100, 'Ad en fazla 100 karakter')
-  .transform(sanitizeString)
-  .refine(val => val.length >= 2, 'Ad en az 2 karakter olmalı');
-
 const updateProfileSchema = z.object({
   body: z.object({
     full_name: fullNameSchema.optional(),

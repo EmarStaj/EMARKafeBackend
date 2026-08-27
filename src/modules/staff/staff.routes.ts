@@ -5,26 +5,12 @@ import { StaffController } from './staff.controller';
 import { requireAuth } from '../../middlewares/auth.middleware';
 import { requireRole } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { fullNameSchema } from '../../utils/sanitize';
 
 const router = Router();
 const controller = container.resolve(StaffController);
 
 // Zod Validation Schemas
-const sanitizeString = (val: string) =>
-  val
-    .replace(/<[^>]*>/g, '') // HTML tagları sil
-    .replace(/[&<>"'`]/g, c => ({ // HTML encode
-      '&': '&amp;', '<': '&lt;', '>': '&gt;',
-      '"': '&quot;', "'": '&#x27;', '`': '&#x60;'
-    }[c] || c))
-    .trim();
-
-const fullNameSchema = z.string()
-  .min(2, 'Ad en az 2 karakter')
-  .max(100, 'Ad en fazla 100 karakter')
-  .transform(sanitizeString)
-  .refine(val => val.length >= 2, 'Ad en az 2 karakter olmalı');
-
 const createStaffSchema = z.object({
   body: z.object({
     email: z.string({ required_error: 'Email is required' }).email('Invalid email address'),
