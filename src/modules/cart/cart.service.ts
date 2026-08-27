@@ -138,23 +138,45 @@ export class CartService {
     }
   }
 
-  async updateCartItem(cartItemId: string, quantity: number, _token: string) {
+  async updateCartItem(cartItemId: string, quantity: number, _token?: string, userId?: string) {
     if (quantity <= 0) {
-      return await this.removeFromCart(cartItemId);
+      return await this.removeFromCart(cartItemId, _token, userId);
     }
     if (quantity > 50) {
       throw new AppError('Quantity cannot exceed 50 per item', 400);
     }
 
     try {
+      if (userId) {
+        const item = await this.cartRepository.getCartItemById(cartItemId);
+        if (!item) {
+          throw new AppError('Cart item not found.', 404);
+        }
+        const cartUserId = (item as any).carts?.user_id;
+        if (cartUserId && cartUserId !== userId) {
+          throw new AppError('Forbidden: You are not authorized to modify this cart item.', 403);
+        }
+      }
+
       return await this.cartRepository.updateCartItem(cartItemId, quantity);
     } catch (error: unknown) {
       rethrowAsAppError(error, 'Failed to update cart item.');
     }
   }
 
-  async removeFromCart(cartItemId: string, _token?: string) {
+  async removeFromCart(cartItemId: string, _token?: string, userId?: string) {
     try {
+      if (userId) {
+        const item = await this.cartRepository.getCartItemById(cartItemId);
+        if (!item) {
+          throw new AppError('Cart item not found.', 404);
+        }
+        const cartUserId = (item as any).carts?.user_id;
+        if (cartUserId && cartUserId !== userId) {
+          throw new AppError('Forbidden: You are not authorized to modify this cart item.', 403);
+        }
+      }
+
       await this.cartRepository.removeFromCart(cartItemId);
     } catch (error: unknown) {
       rethrowAsAppError(error, 'Failed to remove item from cart.');

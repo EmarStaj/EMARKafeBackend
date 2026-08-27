@@ -37,13 +37,14 @@ export class CartController {
 
   updateCartItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const userId = req.user?.id;
       const token = req.token;
-      if (!token) throw new AppError('Unauthorized', 401);
+      if (!userId || !token) throw new AppError('Unauthorized', 401);
 
       const { id } = req.params;
       const { quantity } = req.body;
 
-      const data = await this.cartService.updateCartItem(id, quantity, token);
+      const data = await this.cartService.updateCartItem(id, quantity, token, userId);
       sendSuccess(res, data, 'Cart item updated successfully.');
     } catch (error) {
       next(error);
@@ -52,11 +53,12 @@ export class CartController {
 
   removeFromCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const userId = req.user?.id;
       const token = req.token;
-      if (!token) throw new AppError('Unauthorized', 401);
+      if (!userId || !token) throw new AppError('Unauthorized', 401);
 
       const { id } = req.params;
-      await this.cartService.removeFromCart(id, token);
+      await this.cartService.removeFromCart(id, token, userId);
       sendSuccess(res, null, 'Item removed from cart successfully.');
     } catch (error) {
       next(error);

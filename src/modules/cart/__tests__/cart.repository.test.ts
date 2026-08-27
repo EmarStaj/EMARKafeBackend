@@ -241,6 +241,29 @@ describe('CartRepository', () => {
     });
   });
 
+  describe('getCartItemById', () => {
+    it('should fetch cart item with parent cart', async () => {
+      const mockData = { id: 'item-1', carts: { id: 'cart-1', user_id: 'user-1' } };
+      const builder = mockBuilder({
+        maybeSingle: jest.fn().mockResolvedValue({ data: mockData, error: null })
+      });
+      (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
+
+      const result = await repository.getCartItemById('item-1');
+      expect(result).toEqual(mockData);
+      expect(builder.eq).toHaveBeenCalledWith('id', 'item-1');
+    });
+
+    it('should throw if query fails', async () => {
+      const builder = mockBuilder({
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: new Error('db error') })
+      });
+      (supabaseAdmin.from as jest.Mock).mockReturnValue(builder);
+
+      await expect(repository.getCartItemById('item-1')).rejects.toThrow('db error');
+    });
+  });
+
   describe('updateCartItem', () => {
     it('should update item and return it', async () => {
       const mockData = { id: 'item-1', quantity: 3 };

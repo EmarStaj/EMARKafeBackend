@@ -19,6 +19,7 @@ describe('CartService', () => {
       getCart: jest.fn(),
       getOrCreateActiveCart: jest.fn(),
       getCartItemsByProduct: jest.fn(),
+      getCartItemById: jest.fn(),
       addToCart: jest.fn(),
       updateCartItem: jest.fn(),
       removeFromCart: jest.fn(),
@@ -61,8 +62,9 @@ describe('CartService', () => {
 
   describe('updateCartItem', () => {
     it('should remove item if quantity <= 0', async () => {
+      cartRepo.getCartItemById.mockResolvedValue({ id: 'item-1', carts: { user_id: 'user-1' } } as any);
       cartRepo.removeFromCart.mockResolvedValue(undefined);
-      await service.updateCartItem('item-1', 0, 'token');
+      await service.updateCartItem('item-1', 0, 'token', 'user-1');
       expect(cartRepo.removeFromCart).toHaveBeenCalledWith('item-1');
     });
 
@@ -72,11 +74,22 @@ describe('CartService', () => {
 
     it('should update item and return it', async () => {
       const mockItem = { id: 'item-1', quantity: 2 };
+      cartRepo.getCartItemById.mockResolvedValue({ id: 'item-1', carts: { user_id: 'user-1' } } as any);
       cartRepo.updateCartItem.mockResolvedValue(mockItem as any);
       
-      const result = await service.updateCartItem('item-1', 2, 'token');
+      const result = await service.updateCartItem('item-1', 2, 'token', 'user-1');
       expect(result).toEqual(mockItem);
       expect(cartRepo.updateCartItem).toHaveBeenCalledWith('item-1', 2);
+    });
+
+    it('should throw 404 if cart item not found during ownership check', async () => {
+      cartRepo.getCartItemById.mockResolvedValue(null as any);
+      await expect(service.updateCartItem('item-1', 2, 'token', 'user-1')).rejects.toThrow('Cart item not found.');
+    });
+
+    it('should throw 403 Forbidden if user tries to update another user cart item (IDOR protection)', async () => {
+      cartRepo.getCartItemById.mockResolvedValue({ id: 'item-1', carts: { user_id: 'victim-user' } } as any);
+      await expect(service.updateCartItem('item-1', 2, 'token', 'attacker-user')).rejects.toThrow(/Forbidden/);
     });
 
     it('should rethrow error as AppError', async () => {
@@ -87,9 +100,20 @@ describe('CartService', () => {
 
   describe('removeFromCart', () => {
     it('should remove item', async () => {
+      cartRepo.getCartItemById.mockResolvedValue({ id: 'item-1', carts: { user_id: 'user-1' } } as any);
       cartRepo.removeFromCart.mockResolvedValue(undefined);
-      await service.removeFromCart('item-1', 'token');
+      await service.removeFromCart('item-1', 'token', 'user-1');
       expect(cartRepo.removeFromCart).toHaveBeenCalledWith('item-1');
+    });
+
+    it('should throw 404 if item not found during remove', async () => {
+      cartRepo.getCartItemById.mockResolvedValue(null as any);
+      await expect(service.removeFromCart('item-1', 'token', 'user-1')).rejects.toThrow('Cart item not found.');
+    });
+
+    it('should throw 403 Forbidden if user tries to remove another user cart item', async () => {
+      cartRepo.getCartItemById.mockResolvedValue({ id: 'item-1', carts: { user_id: 'victim-user' } } as any);
+      await expect(service.removeFromCart('item-1', 'token', 'attacker-user')).rejects.toThrow(/Forbidden/);
     });
 
     it('should rethrow error as AppError', async () => {

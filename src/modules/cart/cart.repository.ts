@@ -113,6 +113,20 @@ export class CartRepository {
   }
 
   /**
+   * Find a cart item by its ID with its parent cart details.
+   */
+  async getCartItemById(cartItemId: string) {
+    const { data, error } = await supabaseAdmin
+      .from('cart_items')
+      .select('*, carts:cart_id(id, user_id, status)')
+      .eq('id', cartItemId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
    * Update quantity of a cart item.
    */
   async updateCartItem(cartItemId: string, quantity: number) {

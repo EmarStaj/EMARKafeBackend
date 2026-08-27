@@ -116,7 +116,7 @@ describe('CartController', () => {
 
       await controller.updateCartItem(req as Request, res as Response, next);
       
-      expect(cartService.updateCartItem).toHaveBeenCalledWith('item-1', 3, 'mock-token');
+      expect(cartService.updateCartItem).toHaveBeenCalledWith('item-1', 3, 'mock-token', 'user-1');
       expect(sendSuccess).toHaveBeenCalledWith(res, mockResult, 'Cart item updated successfully.');
     });
 
@@ -144,7 +144,7 @@ describe('CartController', () => {
 
       await controller.removeFromCart(req as Request, res as Response, next);
       
-      expect(cartService.removeFromCart).toHaveBeenCalledWith('item-1', 'mock-token');
+      expect(cartService.removeFromCart).toHaveBeenCalledWith('item-1', 'mock-token', 'user-1');
       expect(sendSuccess).toHaveBeenCalledWith(res, null, 'Item removed from cart successfully.');
     });
 
