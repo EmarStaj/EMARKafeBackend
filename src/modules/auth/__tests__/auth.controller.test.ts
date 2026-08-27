@@ -232,17 +232,19 @@ describe('AuthController', () => {
 
   describe('resetPassword', () => {
     it('should call resetPassword on service and return success', async () => {
+      req.token = 'mock-token';
       req.body = { password: 'newpass' };
       authServiceMock.resetPassword.mockResolvedValue(undefined);
 
       await authController.resetPassword(req as Request, res as Response, next);
 
-      expect(authServiceMock.resetPassword).toHaveBeenCalledWith('newpass');
+      expect(authServiceMock.resetPassword).toHaveBeenCalledWith('mock-token', 'newpass');
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 
     it('should call next on error during resetPassword', async () => {
+      req.token = 'mock-token';
       req.body = { password: 'newpass' };
       const error = new Error('err');
       authServiceMock.resetPassword.mockRejectedValue(error);

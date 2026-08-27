@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { AuthService } from '../auth.service';
-import { supabase } from '../../../config/supabase';
+import { supabase, supabaseAdmin } from '../../../config/supabase';
 import { AppError } from '../../../utils/app-error';
 import { profileCache } from '../../../config/profile-cache';
 
@@ -12,9 +12,17 @@ jest.mock('../../../config/supabase', () => ({
       signOut: jest.fn(),
       resetPasswordForEmail: jest.fn(),
       updateUser: jest.fn(),
+      getUser: jest.fn(),
       refreshSession: jest.fn(),
       admin: {
         signOut: jest.fn(),
+      }
+    }
+  },
+  supabaseAdmin: {
+    auth: {
+      admin: {
+        updateUserById: jest.fn(),
       }
     }
   }
@@ -132,16 +140,35 @@ describe('AuthService', () => {
 
   describe('resetPassword', () => {
     it('should reset password successfully', async () => {
-      (supabase.auth.updateUser as jest.Mock).mockResolvedValue({ error: null });
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null
+      });
+      (supabaseAdmin.auth.admin.updateUserById as jest.Mock).mockResolvedValue({ error: null });
 
-      await authService.resetPassword('newpass');
-      expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpass' });
+      await authService.resetPassword('valid-token', 'newpass');
+      expect(supabase.auth.getUser).toHaveBeenCalledWith('valid-token');
+      expect(supabaseAdmin.auth.admin.updateUserById).toHaveBeenCalledWith('user-123', { password: 'newpass' });
+      expect(profileCache.invalidate).toHaveBeenCalledWith('user-123');
     });
 
-    it('should throw AppError on error', async () => {
-      (supabase.auth.updateUser as jest.Mock).mockResolvedValue({ error: { message: 'reset error' } });
+    it('should throw AppError if token is invalid or user not found', async () => {
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: null },
+        error: { message: 'invalid token' }
+      });
 
-      await expect(authService.resetPassword('newpass')).rejects.toThrow(AppError);
+      await expect(authService.resetPassword('bad-token', 'newpass')).rejects.toThrow(AppError);
+    });
+
+    it('should throw AppError on updateUserById error', async () => {
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null
+      });
+      (supabaseAdmin.auth.admin.updateUserById as jest.Mock).mockResolvedValue({ error: { message: 'update error' } });
+
+      await expect(authService.resetPassword('valid-token', 'newpass')).rejects.toThrow(AppError);
     });
   });
 

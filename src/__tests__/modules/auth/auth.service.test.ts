@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { AuthService } from '../../../modules/auth/auth.service';
-import { supabase } from '../../../config/supabase';
+import { supabase, supabaseAdmin } from '../../../config/supabase';
 import { profileCache } from '../../../config/profile-cache';
 
 jest.mock('../../../config/supabase', () => ({
@@ -11,9 +11,17 @@ jest.mock('../../../config/supabase', () => ({
       admin: { signOut: jest.fn() },
       resetPasswordForEmail: jest.fn(),
       updateUser: jest.fn(),
+      getUser: jest.fn(),
       refreshSession: jest.fn(),
     },
   },
+  supabaseAdmin: {
+    auth: {
+      admin: {
+        updateUserById: jest.fn(),
+      }
+    }
+  }
 }));
 
 jest.mock('../../../config/profile-cache', () => ({
@@ -80,9 +88,13 @@ describe('AuthService Unit Tests', () => {
       await expect(authService.forgotPassword('test@emar.com')).resolves.toBeUndefined();
     });
 
-    it('should call updateUser for resetPassword', async () => {
-      (supabase.auth.updateUser as jest.Mock).mockResolvedValue({ error: null });
-      await expect(authService.resetPassword('new-pass-123')).resolves.toBeUndefined();
+    it('should call updateUserById for resetPassword', async () => {
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: { id: 'u-123' } },
+        error: null
+      });
+      (supabaseAdmin.auth.admin.updateUserById as jest.Mock).mockResolvedValue({ error: null });
+      await expect(authService.resetPassword('valid-token', 'new-pass-123')).resolves.toBeUndefined();
     });
 
     it('should refresh session', async () => {

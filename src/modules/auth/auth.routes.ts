@@ -54,7 +54,7 @@ router.post('/login', authRateLimiter, validate(loginSchema), controller.signIn)
 router.post('/logout', requireAuth, controller.signOut);
 router.get('/me', requireAuth, controller.getMe);
 router.post('/forgot-password', authRateLimiter, validate(forgotPasswordSchema), controller.forgotPassword);
-router.post('/reset-password', authRateLimiter, validate(resetPasswordSchema), controller.resetPassword);
+router.post('/reset-password', authRateLimiter, requireAuth, validate(resetPasswordSchema), controller.resetPassword);
 router.post('/refresh', authRateLimiter, validate(refreshSchema), controller.refresh);
 
 export default router;

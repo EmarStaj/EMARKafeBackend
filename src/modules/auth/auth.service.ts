@@ -1,5 +1,5 @@
 import { injectable } from 'tsyringe';
-import { supabase } from '../../config/supabase';
+import { supabase, supabaseAdmin } from '../../config/supabase';
 import { AppError } from '../../utils/app-error';
 import { profileCache } from '../../config/profile-cache';
 
@@ -69,13 +69,18 @@ export class AuthService {
   }
 
   /**
-   * Reset user password (used after following the link in the email).
+   * Reset user password (used after following the link in the email or authenticated session).
    */
-  async resetPassword(password: string) {
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      throw new AppError(error.message, 400);
+  async resetPassword(accessToken: string, newPassword: string) {
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) {
+      throw new AppError('Geçersiz veya süresi dolmuş token.', 401);
     }
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
+    if (updateError) {
+      throw new AppError(updateError.message, 400);
+    }
+    await profileCache.invalidate(user.id);
   }
 
   /**
