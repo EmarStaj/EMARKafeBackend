@@ -1,4 +1,4 @@
-import { getSupabaseForUser } from '../../config/supabase';
+import { getSupabaseForUser, supabaseAdmin } from '../../config/supabase';
 import { AppError } from '../../utils/app-error';
 
 export interface Transaction {
@@ -14,8 +14,8 @@ export class WalletRepository {
   /**
    * Fetch current balance and recent transactions for the user
    */
-  async getBalanceAndTransactions(userId: string, token: string) {
-    const supabase = getSupabaseForUser(token);
+  async getBalanceAndTransactions(userId: string, token?: string) {
+    const supabase = token ? getSupabaseForUser(token) : supabaseAdmin;
 
     // Get balance
     const { data: profile, error: profileError } = await supabase
@@ -49,8 +49,8 @@ export class WalletRepository {
   /**
    * Top up the user's balance
    */
-  async topup(userId: string, amount: number, token: string) {
-    const supabase = getSupabaseForUser(token);
+  async topup(userId: string, amount: number, token?: string) {
+    const supabase = token ? getSupabaseForUser(token) : supabaseAdmin;
 
     const { data, error } = await supabase.rpc('add_balance', {
       p_user_id: userId,

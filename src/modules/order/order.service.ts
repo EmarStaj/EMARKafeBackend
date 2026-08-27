@@ -259,7 +259,7 @@ export class OrderService {
         ...item,
         order_id: order.id
       }));
-      await this.orderRepository.createOrderItems(orderItems, baristaToken);
+      await this.orderRepository.createOrderItems(orderItems, baristaToken, true);
 
       // 6. Clear the cart
       await this.cartRepository.clearCart(cart.id);
@@ -267,7 +267,7 @@ export class OrderService {
       // 7. Add loyalty points
       // In a real app, loyalty rewards logic runs here.
 
-      return await this.orderRepository.getOrderById(order.id, baristaToken);
+      return await this.orderRepository.getOrderById(order.id, baristaToken, true);
     } catch (error: unknown) {
       rethrowAsAppError(error, 'Failed to process QR checkout.');
     }
