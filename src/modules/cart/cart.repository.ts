@@ -1,4 +1,4 @@
-import { supabaseAdmin, getSupabaseForUser } from '../../config/supabase';
+import { supabaseAdmin } from '../../config/supabase';
 
 export interface Cart {
   id: string;
@@ -44,11 +44,10 @@ export class CartRepository {
   /**
    * Fetch user's active cart and its items, joined with products.
    */
-  async getCart(userId: string, token?: string, isAdmin: boolean = false) {
+  async getCart(userId: string, _token?: string, _isAdmin: boolean = false) {
     const activeCart = await this.getOrCreateActiveCart(userId);
 
-    const client = isAdmin ? supabaseAdmin : (token ? getSupabaseForUser(token) : supabaseAdmin);
-    const { data: items, error } = await client
+    const { data: items, error } = await supabaseAdmin
       .from('cart_items')
       .select(`
         id,

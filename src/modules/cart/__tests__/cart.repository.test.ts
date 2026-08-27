@@ -1,5 +1,5 @@
 import { CartRepository } from '../cart.repository';
-import { supabaseAdmin, getSupabaseForUser } from '../../../config/supabase';
+import { supabaseAdmin } from '../../../config/supabase';
 
 jest.mock('../../../config/supabase', () => ({
   supabaseAdmin: {
@@ -103,19 +103,17 @@ describe('CartRepository', () => {
       
       const repoGetCartMock = jest.spyOn(repository, 'getOrCreateActiveCart').mockResolvedValue(mockCart as any);
       
-      const mockSupabase = {
-        from: jest.fn().mockReturnValue(mockBuilder({
-          resolvedData: mockItems,
-          resolvedError: null,
-          eq: jest.fn().mockReturnThis()
-        }))
-      };
-      (getSupabaseForUser as jest.Mock).mockReturnValue(mockSupabase);
+      const adminBuilder = mockBuilder({
+        resolvedData: mockItems,
+        resolvedError: null,
+        eq: jest.fn().mockReturnThis()
+      });
+      (supabaseAdmin.from as jest.Mock).mockReturnValue(adminBuilder);
 
       const result = await repository.getCart('user-1', 'mock-token', false);
       expect(result.cart).toEqual(mockCart);
       expect(result.items).toEqual(mockItems);
-      expect(getSupabaseForUser).toHaveBeenCalledWith('mock-token');
+      expect(supabaseAdmin.from).toHaveBeenCalledWith('cart_items');
       
       repoGetCartMock.mockRestore();
     });
