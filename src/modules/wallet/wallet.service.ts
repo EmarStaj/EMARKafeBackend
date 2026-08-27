@@ -95,7 +95,6 @@ export class WalletService {
       const payload = {
         userId,
         action: 'checkout',
-        jti
       };
 
       const qrToken = jwt.sign(payload, QR_SECRET, { expiresIn: QR_EXPIRES_IN, jwtid: jti });
