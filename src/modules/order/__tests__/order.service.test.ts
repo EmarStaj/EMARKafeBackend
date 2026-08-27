@@ -283,21 +283,21 @@ describe('OrderService', () => {
       mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({ branch_id: 'b1', status: 'created', user_id: 'u1' });
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
       await service.updateOrderStatus('o1', 'ready', { role: 'admin' } as any);
-      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'ready', undefined);
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'ready', expect.objectContaining({ ready_at: expect.any(String) }));
       expect(mockNotificationService.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('Hazır'), expect.any(String));
     });
     it('updates to preparing', async () => {
       mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({ branch_id: 'b1', status: 'created', user_id: 'u1' });
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
       await service.updateOrderStatus('o1', 'preparing', { role: 'admin' } as any);
-      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'preparing', undefined);
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'preparing', expect.anything());
       expect(mockNotificationService.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('Hazırlanıyor'), expect.any(String));
     });
     it('updates to cancelled', async () => {
       mockOrderRepo.getOrderByIdAdmin.mockResolvedValue({ branch_id: 'b1', status: 'created', user_id: 'u1' });
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
       await service.updateOrderStatus('o1', 'cancelled', { role: 'admin' } as any);
-      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'cancelled', undefined);
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'cancelled', expect.anything());
       expect(mockNotificationService.sendToUser).toHaveBeenCalledWith('u1', expect.stringContaining('İptal'), expect.any(String));
     });
     it('updates to completed', async () => {
@@ -307,7 +307,7 @@ describe('OrderService', () => {
       });
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
       await service.updateOrderStatus('o1', 'completed', { role: 'admin' } as any);
-      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'completed', expect.any(String));
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'completed', expect.objectContaining({ completed_at: expect.any(String) }));
       expect(mockLoyaltyService.addStampsForProduct).toHaveBeenCalledWith('u1', 'c1', 1);
     });
     it('updates to completed handle loyalty error', async () => {
@@ -318,7 +318,7 @@ describe('OrderService', () => {
       mockOrderRepo.updateOrderStatus.mockResolvedValue({ id: 'o1' });
       mockLoyaltyService.addStampsForProduct.mockRejectedValue(new Error('err'));
       await service.updateOrderStatus('o1', 'completed', { role: 'admin' } as any);
-      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'completed', expect.any(String));
+      expect(mockOrderRepo.updateOrderStatus).toHaveBeenCalledWith('o1', 'completed', expect.objectContaining({ completed_at: expect.any(String) }));
       expect(mockLoyaltyService.addStampsForProduct).toHaveBeenCalledWith('u1', 'c1', 1);
     });
     it('failure', async () => {
