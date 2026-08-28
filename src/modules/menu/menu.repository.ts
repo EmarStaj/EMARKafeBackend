@@ -46,6 +46,17 @@ export class MenuRepository {
           id,
           name,
           sort_order
+        ),
+        product_options (
+          id,
+          name,
+          is_required,
+          is_multi_select,
+          product_option_values (
+            id,
+            label,
+            price_delta
+          )
         )
       `);
 
