@@ -118,12 +118,7 @@ export class CartService {
           .single();
 
         const productName = product.name || 'Product';
-        if (!stockData) {
-          warnings.push({
-            reason: 'not_in_menu',
-            message: `"${productName}" is not available in the menu of your default branch.`
-          });
-        } else if (stockData.is_available === false) {
+        if (stockData && stockData.is_available === false) {
           warnings.push({
             reason: 'out_of_stock',
             message: `"${productName}" is currently out of stock at your default branch.`

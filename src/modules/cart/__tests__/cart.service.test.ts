@@ -182,8 +182,8 @@ describe('CartService', () => {
       ]);
     });
 
-    it('should return not_in_menu warning if product not in branch menu and use fallback name', async () => {
-      const mockProduct = { id: 'p1', base_price: 10, is_active: true }; // no name
+    it('should push no warning if product has no branch_products record (default available)', async () => {
+      const mockProduct = { id: 'p1', base_price: 10, is_active: true };
       menuRepo.getItemById.mockResolvedValue(mockProduct as any);
       cartRepo.getOrCreateActiveCart.mockResolvedValue({ id: 'c1' } as any);
       cartRepo.getCartItemsByProduct.mockResolvedValue([]);
@@ -193,10 +193,8 @@ describe('CartService', () => {
         .mockReturnValueOnce(mockSupabaseBuilder({ branch_id: 'b1' }))
         .mockReturnValueOnce(mockSupabaseBuilder(null));
 
-      const result = await service.addToCart('u1', 'p1', 1, undefined as any, 't1'); // selectedOptions is undefined, tests Array.isArray check
-      expect(result.warnings).toEqual([
-        { reason: 'not_in_menu', message: '"Product" is not available in the menu of your default branch.' }
-      ]);
+      const result = await service.addToCart('u1', 'p1', 1, undefined as any, 't1');
+      expect(result.warnings).toBeUndefined();
     });
 
     it('should handle un-ordered options correctly for duplicates', async () => {
