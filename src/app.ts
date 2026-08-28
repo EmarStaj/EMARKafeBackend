@@ -34,6 +34,7 @@ import walletRoutes from './modules/wallet/wallet.routes';
 import settingsRoutes from './modules/settings/settings.routes';
 import auditRoutes from './modules/audit/audit.routes';
 import staffRoutes from './modules/staff/staff.routes';
+import chatRoutes from './modules/chat/chat.routes';
 
 dotenv.config();
 
@@ -148,6 +149,7 @@ apiRouter.use('/audit-logs', auditRoutes);
 apiRouter.use('/audit', auditRoutes);
 apiRouter.use('/staff', staffRoutes);
 apiRouter.use('/admin/staff', staffRoutes);
+apiRouter.use('/chat', chatRoutes);
 
 // Mount versioned (/api/v1) and unversioned (/api) routes
 app.use('/api/v1', apiRouter);
